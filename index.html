@@ -225,6 +225,14 @@ async function sendTelegram(text) {
     });
   } catch(e) {}
 }
+async function sendNtfy(text) {
+  try {
+    await fetch('https://ntfy.sh/asktrain-gisa', {
+      method: 'POST',
+      body: text
+    });
+  } catch(e) {}
+}
 async function send() {
   const input = document.getElementById('input');
   const text = input.value.trim();
@@ -244,6 +252,7 @@ async function send() {
     setTimeout(async () => {
       addMsg('Заявка отправлена тренеру! Он свяжется с тобой в ближайшее время. 💪', 'bot');
       saveOrder(order);
+      await sendNtfy(cardText);
       await sendTelegram('📋 НОВАЯ ЗАЯВКА — ASKTRAIN\n\n' + cardText);
     }, 600);
     document.getElementById('input').disabled = true;
