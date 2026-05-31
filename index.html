@@ -240,6 +240,19 @@
   .pass-input:focus { outline: none; border-color: rgba(139,92,246,0.5); }
   .pass-btn { background: linear-gradient(135deg, #7c3aed, #3b82f6); border: none; border-radius: 14px; color: white; padding: 12px 32px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(124,58,237,0.4); }
   .pass-hint { color: rgba(255,100,100,0.6); font-size: 12px; }
+
+  .particle {
+    position: fixed;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 999;
+    animation: particleFly 0.8s ease-out forwards;
+  }
+  @keyframes particleFly {
+    0%   { opacity: 1; transform: translate(0,0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+  }
 </style>
 </head>
 <body>
@@ -263,7 +276,7 @@
 <div class="messages" id="messages"></div>
 <div class="input-area">
   <textarea id="input" placeholder="Напишите ответ…" rows="1" oninput="autoResize(this)"></textarea>
-  <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
+  <button class="send-btn" id="sendBtn" onclick="sendWithParticles(event)">➤</button>
 </div>
 <div class="bottom-line"></div>
 
@@ -438,10 +451,4 @@ async function send() {
   }
 }
 document.getElementById('input').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-});
-addMsg('Привет! 💪 Я Asktrain — помощник по оформлению персональной программы тренировок.\n\nОтвечай на вопросы, и тренер составит план именно под тебя. Это займёт пару минут!', 'bot');
-setTimeout(() => addMsg(QUESTIONS[0], 'bot'), 400);
-</script>
-</body>
-</html>
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefaul
