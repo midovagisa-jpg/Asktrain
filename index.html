@@ -116,12 +116,11 @@
     display: flex; flex-direction: column; gap: 14px;
     z-index: 1; position: relative;
   }
-  .msg { display: flex; align-items: flex-end; gap: 8px; animation: msgIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  .msg { display: flex; align-items: flex-end; gap: 8px; }
   .msg.user { justify-content: flex-end; }
-  .msg.user .msg-bubble { animation: msgInRight 0.5s cubic-bezier(0.34,1.56,0.64,1); }
-  .msg.bot .msg-bubble { animation: msgInLeft 0.5s cubic-bezier(0.34,1.56,0.64,1); }
-  .msg.card .msg-bubble { animation: msgInCard 0.6s cubic-bezier(0.34,1.56,0.64,1); }
-  @keyframes msgIn { from{opacity:0;} to{opacity:1;} }
+  .msg.user .msg-bubble { animation: msgInRight 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+  .msg.bot .msg-bubble { animation: msgInLeft 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+  .msg.card .msg-bubble { animation: msgInCard 0.6s cubic-bezier(0.34,1.56,0.64,1) both; }
   @keyframes msgInRight {
     from { opacity:0; transform: translateX(20px) scale(0.85); }
     to   { opacity:1; transform: translateX(0) scale(1); }
@@ -451,4 +450,6 @@ async function send() {
   }
 }
 document.getElementById('input').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefaul
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+addMsg('Привет! 💪 Я Asktrain — помощник по оформлению персональной програм
