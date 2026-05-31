@@ -5,82 +5,200 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Asktrain — Персональные тренировки</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; }
-  body { background: #0d0d0d; font-family: 'DM Sans', sans-serif; display: flex; flex-direction: column; height: 100dvh; }
-  .bg-grid { position: fixed; inset: 0; background-image: linear-gradient(rgba(232,245,66,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(232,245,66,0.03) 1px,transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
-  .top-line { height: 3px; background: linear-gradient(90deg,transparent,#e8f542,#b8c520,#e8f542,transparent); flex-shrink: 0; z-index: 1; position: relative; }
-  .header { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; background: rgba(10,10,10,0.95); flex-shrink: 0; z-index: 1; position: relative; }
+  body {
+    background: #0a0a14;
+    font-family: 'Inter', sans-serif;
+    display: flex; flex-direction: column;
+    height: 100dvh;
+  }
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 2px; }
+
+  /* Background */
+  .bg {
+    position: fixed; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse at 20% 0%, rgba(124,58,237,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(59,130,246,0.12) 0%, transparent 60%),
+                #0a0a14;
+  }
+  .bg-dots {
+    position: fixed; inset: 0; z-index: 0;
+    background-image: radial-gradient(rgba(139,92,246,0.08) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+  }
+
+  /* Header */
+  .header {
+    padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(10,10,20,0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(139,92,246,0.15);
+    flex-shrink: 0; z-index: 1; position: relative;
+  }
   .header-left { display: flex; align-items: center; gap: 12px; }
-  .logo-icon { width: 38px; height: 38px; background: #e8f542; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-  .logo-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #e8f542; letter-spacing: 0.1em; line-height: 1; }
-  .logo-sub { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.15em; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-top: 2px; }
-  .status { display: flex; align-items: center; gap: 6px; }
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; }
-  .status-text { font-size: 11px; color: rgba(255,255,255,0.3); font-family: 'DM Mono', monospace; }
-  .progress-bar { height: 3px; background: rgba(255,255,255,0.05); flex-shrink: 0; z-index: 1; position: relative; }
-  .progress-fill { height: 100%; background: #e8f542; width: 0%; transition: width 0.4s ease; }
-  .messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; z-index: 1; position: relative; }
-  .messages::-webkit-scrollbar { width: 3px; }
-  .messages::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-  .msg { display: flex; align-items: flex-end; gap: 8px; animation: fadeUp 0.3s ease; }
+  .logo-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: linear-gradient(135deg, #7c3aed, #3b82f6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(124,58,237,0.4);
+  }
+  .logo-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px; font-weight: 700;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+  }
+  .logo-sub { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px; }
+  .status-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 20px; padding: 4px 10px;
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  .status-text { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 500; }
+
+  /* Progress */
+  .progress-wrap { height: 2px; background: rgba(255,255,255,0.05); flex-shrink: 0; z-index: 1; position: relative; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #3b82f6); width: 0%; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+
+  /* Messages */
+  .messages {
+    flex: 1; overflow-y: auto; padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 14px;
+    z-index: 1; position: relative;
+  }
+  .msg { display: flex; align-items: flex-end; gap: 8px; animation: msgIn 0.3s cubic-bezier(0.4,0,0.2,1); }
   .msg.user { justify-content: flex-end; }
-  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-  .msg-avatar { width: 26px; height: 26px; border-radius: 3px; background: #e8f542; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
-  .msg-avatar.user { border-radius: 50%; background: rgba(232,245,66,0.1); border: 1px solid rgba(232,245,66,0.25); color: #e8f542; }
-  .msg-bubble { max-width: 80%; padding: 11px 15px; font-size: 14px; line-height: 1.65; font-weight: 300; white-space: pre-wrap; word-break: break-word; }
-  .msg.bot .msg-bubble { border-radius: 3px 12px 12px 12px; background: rgba(26,26,26,0.95); border: 1px solid rgba(255,255,255,0.07); color: #d4d4d4; }
-  .msg.user .msg-bubble { border-radius: 12px 3px 12px 12px; background: linear-gradient(135deg,rgba(232,245,66,0.15),rgba(180,200,30,0.08)); border: 1px solid rgba(232,245,66,0.2); color: #f0f4c0; }
-  .msg.card .msg-bubble { background: rgba(0,200,120,0.07); border: 1px solid rgba(0,200,120,0.25); color: #a8f0d0; font-family: 'DM Mono', monospace; font-size: 13px; line-height: 1.8; }
-  .input-area { padding: 12px 14px; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(10,10,10,0.95); display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0; z-index: 1; position: relative; }
-  textarea { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #e0e0e0; padding: 10px 14px; font-size: 14px; font-family: 'DM Sans', sans-serif; font-weight: 300; resize: none; max-height: 100px; overflow-y: auto; line-height: 1.5; transition: border-color 0.2s; }
-  textarea:focus { outline: none; border-color: #e8f542; }
-  textarea:disabled { opacity: 0.4; }
-  .send-btn { width: 42px; height: 42px; border-radius: 6px; border: none; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; font-weight: bold; }
-  .send-btn:not(:disabled) { background: #e8f542; color: #0d0d0d; }
-  .send-btn:disabled { background: rgba(255,255,255,0.05); color: #444; cursor: not-allowed; }
-  .bottom-line { height: 2px; background: linear-gradient(90deg,transparent,#e8f542,#b8c520,#e8f542,transparent); flex-shrink: 0; z-index: 1; position: relative; }
+  @keyframes msgIn { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+
+  .msg-avatar {
+    width: 28px; height: 28px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, #7c3aed, #3b82f6);
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+    box-shadow: 0 0 12px rgba(124,58,237,0.3);
+  }
+  .msg-avatar.user {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 50%; color: rgba(255,255,255,0.5);
+    box-shadow: none;
+  }
+  .msg-bubble {
+    max-width: 78%; padding: 12px 16px;
+    font-size: 14px; line-height: 1.6; font-weight: 400;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .msg.bot .msg-bubble {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px 16px 16px 16px;
+    color: #e2e8f0;
+    backdrop-filter: blur(10px);
+  }
+  .msg.user .msg-bubble {
+    background: linear-gradient(135deg, rgba(124,58,237,0.35), rgba(59,130,246,0.25));
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 16px 4px 16px 16px;
+    color: #e2e8f0;
+  }
+  .msg.card .msg-bubble {
+    background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(59,130,246,0.08));
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 16px;
+    color: #6ee7b7;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 13px; line-height: 1.8;
+    width: 100%; max-width: 100%;
+  }
+
+  /* Input */
+  .input-area {
+    padding: 12px 14px;
+    background: rgba(10,10,20,0.85);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(139,92,246,0.12);
+    display: flex; gap: 8px; align-items: flex-end;
+    flex-shrink: 0; z-index: 1; position: relative;
+  }
+  textarea {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; color: #e2e8f0;
+    padding: 10px 16px; font-size: 14px;
+    font-family: 'Inter', sans-serif; font-weight: 400;
+    resize: none; max-height: 100px; overflow-y: auto;
+    line-height: 1.5; transition: all 0.2s;
+  }
+  textarea:focus { outline: none; border-color: rgba(139,92,246,0.5); background: rgba(255,255,255,0.07); }
+  textarea::placeholder { color: rgba(255,255,255,0.25); }
+  textarea:disabled { opacity: 0.3; }
+  .send-btn {
+    width: 42px; height: 42px; border-radius: 14px; border: none;
+    font-size: 16px; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; font-weight: bold;
+  }
+  .send-btn:not(:disabled) {
+    background: linear-gradient(135deg, #7c3aed, #3b82f6);
+    color: white;
+    box-shadow: 0 4px 15px rgba(124,58,237,0.4);
+  }
+  .send-btn:not(:disabled):hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(124,58,237,0.5); }
+  .send-btn:disabled { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); cursor: not-allowed; }
+
+  /* Bottom line */
+  .bottom-line { height: 2px; background: linear-gradient(90deg, transparent, #7c3aed, #3b82f6, transparent); flex-shrink: 0; z-index: 1; }
 
   /* Admin panel */
-  .admin-panel { position: fixed; inset: 0; background: #0d0d0d; z-index: 100; display: none; flex-direction: column; }
+  .admin-panel { position: fixed; inset: 0; background: #0a0a14; z-index: 100; display: none; flex-direction: column; }
   .admin-panel.open { display: flex; }
-  .admin-header { padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; background: rgba(10,10,10,0.95); flex-shrink: 0; }
-  .admin-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #e8f542; letter-spacing: 0.1em; }
-  .close-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #aaa; width: 36px; height: 36px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+  .admin-header { padding: 16px 20px; border-bottom: 1px solid rgba(139,92,246,0.15); display: flex; align-items: center; justify-content: space-between; background: rgba(10,10,20,0.9); flex-shrink: 0; }
+  .admin-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #a78bfa, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .close-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #aaa; width: 36px; height: 36px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
   .admin-body { flex: 1; overflow-y: auto; padding: 14px; }
-  .order-card { padding: 14px 16px; margin-bottom: 10px; background: rgba(26,26,26,0.9); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; cursor: pointer; transition: border-color 0.2s; }
-  .order-card:hover { border-color: rgba(232,245,66,0.3); }
-  .order-name { color: #e8f542; font-weight: 500; font-size: 15px; }
-  .order-meta { color: rgba(255,255,255,0.35); font-size: 12px; font-family: 'DM Mono', monospace; margin-top: 3px; }
-  .order-goal { color: rgba(255,255,255,0.45); font-size: 12px; margin-top: 3px; }
-  .order-detail { background: rgba(0,200,120,0.05); border: 1px solid rgba(0,200,120,0.2); border-radius: 10px; padding: 16px; white-space: pre-wrap; font-family: 'DM Mono', monospace; font-size: 13px; color: #a8f0d0; line-height: 1.8; }
-  .back-btn { background: none; border: none; color: #e8f542; cursor: pointer; font-size: 14px; margin-bottom: 14px; padding: 0; display: flex; align-items: center; gap: 6px; font-family: 'DM Sans', sans-serif; }
-  .empty-state { text-align: center; margin-top: 60px; color: rgba(255,255,255,0.3); font-family: 'DM Sans', sans-serif; font-size: 14px; }
+  .order-card { padding: 14px 16px; margin-bottom: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; cursor: pointer; transition: all 0.2s; }
+  .order-card:hover { border-color: rgba(139,92,246,0.3); background: rgba(139,92,246,0.08); }
+  .order-name { color: #a78bfa; font-weight: 600; font-size: 15px; }
+  .order-meta { color: rgba(255,255,255,0.3); font-size: 12px; margin-top: 3px; }
+  .order-goal { color: rgba(255,255,255,0.4); font-size: 12px; margin-top: 3px; }
+  .order-detail { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2); border-radius: 14px; padding: 16px; white-space: pre-wrap; font-size: 13px; color: #6ee7b7; line-height: 1.8; }
+  .back-btn { background: none; border: none; color: #a78bfa; cursor: pointer; font-size: 14px; margin-bottom: 14px; padding: 0; display: flex; align-items: center; gap: 6px; }
+  .empty-state { text-align: center; margin-top: 60px; color: rgba(255,255,255,0.2); font-size: 14px; }
   .pass-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 16px; padding: 24px; }
-  .pass-input { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #e0e0e0; padding: 12px 16px; font-size: 16px; width: 100%; max-width: 300px; text-align: center; letter-spacing: 0.2em; }
-  .pass-input:focus { outline: none; border-color: #e8f542; }
-  .pass-btn { background: #e8f542; border: none; border-radius: 8px; color: #0d0d0d; padding: 12px 32px; font-size: 15px; font-weight: bold; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-  .pass-hint { color: rgba(255,255,255,0.25); font-size: 12px; font-family: 'DM Mono', monospace; }
+  .pass-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; color: #e2e8f0; padding: 12px 20px; font-size: 16px; width: 100%; max-width: 300px; text-align: center; letter-spacing: 0.2em; }
+  .pass-input:focus { outline: none; border-color: rgba(139,92,246,0.5); }
+  .pass-btn { background: linear-gradient(135deg, #7c3aed, #3b82f6); border: none; border-radius: 14px; color: white; padding: 12px 32px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(124,58,237,0.4); }
+  .pass-hint { color: rgba(255,100,100,0.6); font-size: 12px; }
 </style>
 </head>
 <body>
-<div class="bg-grid"></div>
-<div class="top-line"></div>
+<div class="bg"></div>
+<div class="bg-dots"></div>
+
 <div class="header">
   <div class="header-left">
-    <div class="logo-icon">⚡</div>
+    <div class="logo-icon" id="logoIcon">⚡</div>
     <div>
       <div class="logo-title">ASKTRAIN</div>
       <div class="logo-sub">Персональные тренировки</div>
     </div>
   </div>
-  <div class="status">
+  <div class="status-badge">
     <div class="status-dot" id="statusDot"></div>
     <span class="status-text" id="statusText">0/10</span>
   </div>
 </div>
-<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+<div class="progress-wrap"><div class="progress-fill" id="progress"></div></div>
 <div class="messages" id="messages"></div>
 <div class="input-area">
   <textarea id="input" placeholder="Напишите ответ…" rows="1" oninput="autoResize(this)"></textarea>
@@ -90,13 +208,12 @@
 
 <!-- Admin Panel -->
 <div class="admin-panel" id="adminPanel">
-  <div class="top-line"></div>
-  <div class="admin-header">
+  <div class="header" style="border-bottom:1px solid rgba(139,92,246,0.15);">
     <div style="display:flex;align-items:center;gap:10px;">
-      <div class="logo-icon" style="width:32px;height:32px;font-size:15px;">📋</div>
+      <div class="logo-icon" style="font-size:15px;">📋</div>
       <div>
         <div class="admin-title">ЗАЯВКИ</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.3);font-family:'DM Mono',monospace;" id="orderCount">0 записей</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.3);" id="orderCount">0 записей</div>
       </div>
     </div>
     <button class="close-btn" onclick="closeAdmin()">✕</button>
@@ -125,7 +242,6 @@ const QUESTIONS = [
 const KEYS = ["name","phone","age","gender","body","goal","concerns","level","injuries","schedule"];
 let step = 0, answers = {}, done = false;
 
-// ── Storage (localStorage) ──
 function loadOrders() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
 }
@@ -135,16 +251,14 @@ function saveOrder(order) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
 }
 
-// ── Secret admin: tap logo 5 times ──
 let tapCount = 0, tapTimer;
-document.querySelector('.logo-icon').addEventListener('click', () => {
+document.getElementById('logoIcon').addEventListener('click', () => {
   tapCount++;
   clearTimeout(tapTimer);
   tapTimer = setTimeout(() => tapCount = 0, 2000);
   if (tapCount >= 5) { tapCount = 0; openAdmin(); }
 });
 
-// ── Admin panel ──
 let adminUnlocked = false;
 function openAdmin() {
   document.getElementById('adminPanel').classList.add('open');
@@ -156,8 +270,8 @@ function closeAdmin() {
 function showPassScreen() {
   document.getElementById('adminBody').innerHTML = `
     <div class="pass-screen">
-      <div style="font-size:32px">🔐</div>
-      <div style="color:rgba(255,255,255,0.5);font-family:'DM Sans',sans-serif;font-size:14px;">Введи пароль тренера</div>
+      <div style="font-size:40px">🔐</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:14px;">Введи пароль тренера</div>
       <input class="pass-input" type="password" id="passInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkPass()">
       <button class="pass-btn" onclick="checkPass()">Войти</button>
       <div class="pass-hint" id="passHint"></div>
@@ -176,7 +290,7 @@ function showOrders(selected) {
     document.getElementById('adminBody').innerHTML = `
       <button class="back-btn" onclick="showOrders()">‹ Назад</button>
       <div class="order-detail">${formatCard(o)}</div>
-      <button onclick="deleteOrder(${selected})" style="margin-top:12px;width:100%;padding:12px;background:rgba(220,50,50,0.1);border:1px solid rgba(220,50,50,0.2);border-radius:8px;color:#f87171;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;">🗑 Удалить заявку</button>`;
+      <button onclick="deleteOrder(${selected})" style="margin-top:12px;width:100%;padding:12px;background:rgba(220,50,50,0.1);border:1px solid rgba(220,50,50,0.2);border-radius:12px;color:#f87171;cursor:pointer;font-size:14px;">🗑 Удалить заявку</button>`;
     return;
   }
   if (orders.length === 0) {
@@ -200,7 +314,6 @@ function formatCard(o) {
   return `📋 ЗАЯВКА — ASKTRAIN\n\nИмя: ${o.name}\nТелефон: ${o.phone}\nВозраст: ${o.age}\nПол: ${o.gender}\nВес/Рост: ${o.body}\nЦель: ${o.goal}\nПожелания: ${o.concerns}\nУровень: ${o.level}\nТравмы: ${o.injuries}\nГрафик: ${o.schedule}\n\n${new Date(o.ts).toLocaleString('ru-RU')}`;
 }
 
-// ── Chat ──
 function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
 function addMsg(text, type) {
   const msgs = document.getElementById('messages');
@@ -215,7 +328,10 @@ function addMsg(text, type) {
 function updateProgress() {
   document.getElementById('progress').style.width = (step/QUESTIONS.length*100)+'%';
   document.getElementById('statusText').textContent = done ? 'готово' : step+'/10';
-  if (done) document.getElementById('statusDot').style.background = '#e8f542';
+  if (done) {
+    document.getElementById('statusDot').style.background = '#a78bfa';
+    document.getElementById('statusDot').style.animation = 'none';
+  }
 }
 async function sendTelegram(text) {
   try {
@@ -228,8 +344,7 @@ async function sendTelegram(text) {
 async function sendNtfy(text) {
   try {
     await fetch('https://ntfy.sh/asktrain-gisa', {
-      method: 'POST',
-      body: text
+      method: 'POST', body: text
     });
   } catch(e) {}
 }
