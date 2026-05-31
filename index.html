@@ -20,13 +20,53 @@
   /* Background */
   .bg {
     position: fixed; inset: 0; z-index: 0;
-    background: radial-gradient(ellipse at 20% 0%, rgba(124,58,237,0.15) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 100%, rgba(59,130,246,0.12) 0%, transparent 60%),
-                #0a0a14;
+    background: #0a0a14;
+    overflow: hidden;
+  }
+  .bg::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,58,237,0.25) 0%, transparent 70%);
+    animation: float1 8s ease-in-out infinite;
+    top: -200px; left: -200px;
+  }
+  .bg::after {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%);
+    animation: float2 10s ease-in-out infinite;
+    bottom: -150px; right: -150px;
+  }
+  .orb3 {
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+    animation: float3 12s ease-in-out infinite;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  @keyframes float1 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33% { transform: translate(150px, 100px) scale(1.1); }
+    66% { transform: translate(50px, 200px) scale(0.9); }
+  }
+  @keyframes float2 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33% { transform: translate(-120px, -80px) scale(1.15); }
+    66% { transform: translate(-60px, -180px) scale(0.95); }
+  }
+  @keyframes float3 {
+    0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
+    50% { transform: translate(-40%,-60%) scale(1.2); opacity: 1; }
   }
   .bg-dots {
     position: fixed; inset: 0; z-index: 0;
-    background-image: radial-gradient(rgba(139,92,246,0.08) 1px, transparent 1px);
+    background-image: radial-gradient(rgba(139,92,246,0.06) 1px, transparent 1px);
     background-size: 28px 28px;
     pointer-events: none;
   }
@@ -82,10 +122,13 @@
 
   .msg-avatar {
     width: 28px; height: 28px; border-radius: 10px; flex-shrink: 0;
-    background: linear-gradient(135deg, #7c3aed, #3b82f6);
+    background: linear-gradient(135deg, #7c3aed, #3b82f6, #a78bfa, #3b82f6, #7c3aed);
+    background-size: 300% 300%;
     display: flex; align-items: center; justify-content: center; font-size: 13px;
     box-shadow: 0 0 12px rgba(124,58,237,0.3);
+    animation: gradientMove 4s ease infinite;
   }
+  @keyframes gradientMove { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
   .msg-avatar.user {
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.12);
@@ -149,15 +192,18 @@
     transition: all 0.2s; font-weight: bold;
   }
   .send-btn:not(:disabled) {
-    background: linear-gradient(135deg, #7c3aed, #3b82f6);
+    background: linear-gradient(135deg, #7c3aed, #3b82f6, #a78bfa, #3b82f6, #7c3aed);
+    background-size: 300% 300%;
     color: white;
     box-shadow: 0 4px 15px rgba(124,58,237,0.4);
+    animation: gradientMove 4s ease infinite;
   }
   .send-btn:not(:disabled):hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(124,58,237,0.5); }
   .send-btn:disabled { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); cursor: not-allowed; }
 
   /* Bottom line */
-  .bottom-line { height: 2px; background: linear-gradient(90deg, transparent, #7c3aed, #3b82f6, transparent); flex-shrink: 0; z-index: 1; }
+  .bottom-line { height: 2px; background-size: 200% 100%; background-image: linear-gradient(90deg, transparent, #7c3aed, #3b82f6, #a78bfa, transparent); flex-shrink: 0; z-index: 1; animation: shimmer 3s linear infinite; }
+  @keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
 
   /* Admin panel */
   .admin-panel { position: fixed; inset: 0; background: #0a0a14; z-index: 100; display: none; flex-direction: column; }
@@ -182,7 +228,7 @@
 </style>
 </head>
 <body>
-<div class="bg"></div>
+<div class="bg"><div class="orb3"></div></div>
 <div class="bg-dots"></div>
 
 <div class="header">
