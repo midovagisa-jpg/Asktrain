@@ -120,6 +120,21 @@ html, body { height: 100%; overflow: hidden; background: #0a0a14; font-family: '
 .particle { position: fixed; border-radius: 50%; pointer-events: none; z-index: 999; animation: pFly 0.7s ease-out forwards; }
 @keyframes pFly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
 
+/* Message animations */
+@keyframes msgInLeft{from{opacity:0;transform:translateX(-20px) scale(0.88);}to{opacity:1;transform:translateX(0) scale(1);}}
+@keyframes msgInRight{from{opacity:0;transform:translateX(20px) scale(0.88);}to{opacity:1;transform:translateX(0) scale(1);}}
+.msg-group:not(.mine) .bubble { animation: msgInLeft 0.45s cubic-bezier(0.34,1.56,0.64,1) both; }
+.msg-group.mine .bubble { animation: msgInRight 0.45s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+/* Group management modal */
+.member-item { display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;transition:background 0.15s; }
+.member-item:hover { background:rgba(255,255,255,0.05); }
+.remove-btn { margin-left:auto;background:rgba(220,50,50,0.15);border:1px solid rgba(220,50,50,0.25);color:#f87171;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer; }
+.add-member-wrap { display:flex;gap:8px;margin-top:10px; }
+.add-member-inp { flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#e2e8f0;padding:8px 12px;font-size:13px;font-family:Inter,sans-serif; }
+.add-member-inp:focus { outline:none;border-color:rgba(139,92,246,0.5); }
+.small-btn { background:linear-gradient(135deg,#7c3aed,#3b82f6);border:none;border-radius:10px;color:white;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer; }
+
 .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; display: inline-block; margin-right: 4px; animation: blink 2s infinite; }
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
 </style>
@@ -171,6 +186,7 @@ html, body { height: 100%; overflow: hidden; background: #0a0a14; font-family: '
       <div class="chat-header-name" id="chatHeaderName"></div>
       <div class="chat-header-status" id="chatHeaderStatus"></div>
     </div>
+    <div class="icon-btn" id="groupSettingsBtn" style="display:none;" onclick="openGroupSettings()">⚙️</div>
   </div>
   <div class="shimmer-line"></div>
   <div class="messages" id="chatMessages"></div>
@@ -274,180 +290,4 @@ function loadChats() {
   });
 }
 
-function renderChats() {
-  const q = document.getElementById('searchInp').value.toLowerCase();
-  let filtered = allChats.filter(c=>{
-    if(q && !c.name.toLowerCase().includes(q)) return false;
-    if(currentTab==='direct' && c.type!=='dm') return false;
-    if(currentTab==='group' && c.type!=='group') return false;
-    return true;
-  });
-  filtered.sort((a,b)=>b.lastTime-a.lastTime);
-  const el = document.getElementById('chatsList');
-  if(!filtered.length){
-    el.innerHTML='<div class="empty-list"><div>💬</div>Нет чатов. Нажми ✏️ чтобы начать!</div>';
-    return;
-  }
-  el.innerHTML = filtered.map(c=>{
-    const time = c.lastTime ? new Date(c.lastTime).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}) : '';
-    const avatarStyle = c.type==='group' ? 'group' : '';
-    return `<div class="chat-item" onclick="openChat('${c.id}','${c.type}','${c.name}','${c.color}')">
-      <div class="chat-avatar ${avatarStyle}" style="background:${c.color}">${c.type==='group'?'👥':c.name[0].toUpperCase()}</div>
-      <div class="chat-info">
-        <div class="chat-name">${c.name}</div>
-        <div class="chat-last">${c.lastMsg||'Нет сообщений'}</div>
-      </div>
-      <div class="chat-meta"><div class="chat-time">${time}</div></div>
-    </div>`;
-  }).join('');
-}
-
-window.filterChats = renderChats;
-window.switchTab = function(tab, el) {
-  currentTab = tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  renderChats();
-}
-
-// OPEN CHAT
-window.openChat = function(id, type, name, color) {
-  currentChat = id;
-  currentChatType = type;
-  const avatarEl = document.getElementById('chatHeaderAvatar');
-  avatarEl.textContent = type==='group' ? '👥' : name[0].toUpperCase();
-  avatarEl.style.background = color;
-  if(type==='group') avatarEl.classList.add('group'); else avatarEl.classList.remove('group');
-  document.getElementById('chatHeaderName').textContent = name;
-  document.getElementById('chatHeaderStatus').innerHTML = type==='group' ? '👥 Группа' : `<span class="online-dot"></span>${name}`;
-  document.getElementById('chatMessages').innerHTML = '';
-  showScreen('chatScreen');
-  loadMessages(id, type);
-}
-
-window.backToChats = function() {
-  showScreen('chatsScreen');
-  currentChat = null;
-}
-
-function loadMessages(chatId, type) {
-  const path = type==='group' ? `groups/${chatId}/messages` : `dms/${chatId}/messages`;
-  const q2 = query(ref(db,path), orderByChild('ts'), limitToLast(50));
-  onValue(q2, snap=>{
-    const msgs = document.getElementById('chatMessages');
-    msgs.innerHTML = '';
-    if(!snap.val()) return;
-    const list = Object.values(snap.val()).sort((a,b)=>a.ts-b.ts);
-    let lastDate = '', lastNick = '', lastMine = null;
-    list.forEach(m=>{
-      const d = new Date(m.ts).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
-      if(d!==lastDate){ msgs.innerHTML+=`<div class="date-divider">${d}</div>`; lastDate=d; lastNick=''; }
-      const isMine = m.nick===myNick;
-      const t = new Date(m.ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-      const color = getColor(m.nick);
-      if(m.nick!==lastNick || isMine!==lastMine){
-        if(!isMine) msgs.innerHTML+=`<div class="msg-sender" style="color:${color}">${m.nick}</div>`;
-        lastNick=m.nick; lastMine=isMine;
-      }
-      msgs.innerHTML+=`<div class="msg-group ${isMine?'mine':''}">
-        <div class="msg-row">
-          ${!isMine?`<div class="msg-avatar-small" style="background:${color}">${m.nick[0].toUpperCase()}</div>`:''}
-          <div class="bubble">${m.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-          <div class="msg-time-small">${t}</div>
-        </div>
-      </div>`;
-    });
-    msgs.scrollTop = msgs.scrollHeight;
-  });
-}
-
-// SEND MESSAGE
-window.sendMessage = async function() {
-  const inp = document.getElementById('msgInput');
-  const text = inp.value.trim();
-  if(!text||!currentChat) return;
-  inp.value=''; inp.style.height='auto';
-  const path = currentChatType==='group' ? `groups/${currentChat}/messages` : `dms/${currentChat}/messages`;
-  const msg = { nick:myNick, text, ts: Date.now() };
-  await push(ref(db,path), msg);
-  // Update last message
-  const metaPath = currentChatType==='group' ? `groups/${currentChat}` : `dms/${currentChat}`;
-  set(ref(db,metaPath+'/lastMsg'), text.substring(0,50));
-  set(ref(db,metaPath+'/lastTime'), Date.now());
-}
-
-window.sendMessageBtn = function() {
-  spawnParticles();
-  sendMessage();
-}
-
-// MODALS
-window.openNewChat = function() { document.getElementById('modalOverlay').classList.add('open'); document.getElementById('modalForm').innerHTML=''; }
-window.closeModal = function(e) { if(e.target.id==='modalOverlay') document.getElementById('modalOverlay').classList.remove('open'); }
-
-window.showDirectChat = function() {
-  document.getElementById('modalForm').innerHTML=`
-    <div class="modal-input-group">
-      <div style="font-size:13px;color:rgba(255,255,255,0.4);">Введи никнейм собеседника:</div>
-      <input class="inp" id="dmNickInp" placeholder="Никнейм..." onkeydown="if(event.key==='Enter')startDM()">
-      <button class="btn" onclick="startDM()">Начать чат →</button>
-      <div class="err" id="dmErr"></div>
-    </div>`;
-}
-
-window.startDM = async function() {
-  const other = document.getElementById('dmNickInp').value.trim();
-  if(!other){ document.getElementById('dmErr').textContent='Введи никнейм'; return; }
-  if(other===myNick){ document.getElementById('dmErr').textContent='Нельзя писать себе'; return; }
-  const dmId = [myNick,other].sort().join('_');
-  // Create DM entry
-  const dmRef = ref(db,'dms/'+dmId);
-  const snap = await get(dmRef);
-  if(!snap.val()) set(dmRef, {members:[myNick,other], created:Date.now()});
-  document.getElementById('modalOverlay').classList.remove('open');
-  openChat(dmId,'dm',other,getColor(other));
-}
-
-window.showCreateGroup = function() {
-  document.getElementById('modalForm').innerHTML=`
-    <div class="modal-input-group">
-      <div style="font-size:13px;color:rgba(255,255,255,0.4);">Название группы:</div>
-      <input class="inp" id="groupNameInp" placeholder="Название..." onkeydown="if(event.key==='Enter')createGroup()">
-      <button class="btn" onclick="createGroup()">Создать группу 👥</button>
-      <div class="err" id="groupErr"></div>
-    </div>`;
-}
-
-window.createGroup = async function() {
-  const name = document.getElementById('groupNameInp').value.trim();
-  if(!name){ document.getElementById('groupErr').textContent='Введи название'; return; }
-  const groupRef = push(ref(db,'groups'));
-  await set(groupRef, { name, creator:myNick, created:Date.now() });
-  document.getElementById('modalOverlay').classList.remove('open');
-  openChat(groupRef.key,'group',name,'#059669');
-}
-
-function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
-window.autoResize = autoResize;
-
-function spawnParticles() {
-  const btn = document.querySelector('.send-btn');
-  if(!btn) return;
-  const rect = btn.getBoundingClientRect();
-  const x=rect.left+rect.width/2, y=rect.top+rect.height/2;
-  const colors=['#a78bfa','#60a5fa','#c4b5fd','#93c5fd'];
-  for(let i=0;i<8;i++){
-    const p=document.createElement('div'); p.className='particle';
-    const angle=(360/8)*i; const dist=35+Math.random()*30;
-    const rad=angle*Math.PI/180; const size=4+Math.random()*5;
-    p.style.cssText=`left:${x-size/2}px;top:${y-size/2}px;width:${size}px;height:${size}px;background:${colors[i%4]};--tx:${Math.cos(rad)*dist}px;--ty:${Math.sin(rad)*dist}px;`;
-    document.body.appendChild(p); setTimeout(()=>p.remove(),700);
-  }
-}
-
-// Auto login
-const saved = localStorage.getItem('fitchat_nick');
-if(saved){ document.getElementById('nickInp').value=saved; }
-</script>
-</body>
-</html>
+function rende
