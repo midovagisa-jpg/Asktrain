@@ -1,0 +1,1999 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FitChat">
+<meta name="theme-color" content="#0d0010">
+<title>FitChat</title>
+<link rel="manifest" id="manifestLink">
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:#0d0010;color:#e2e8f0;}
+
+/* ===== ANIMATED BACKGROUND ===== */
+.bg-anim{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.bg-orb{position:absolute;border-radius:50%;filter:blur(80px);animation:orbFloat 8s ease-in-out infinite;}
+.bg-orb1{width:350px;height:350px;background:radial-gradient(circle,#9b00ff88,#ff005544);top:-100px;left:-80px;animation-delay:0s;}
+.bg-orb2{width:280px;height:280px;background:radial-gradient(circle,#ff005566,#9b00ff44);bottom:-80px;right:-60px;animation-delay:-3s;}
+.bg-orb3{width:200px;height:200px;background:radial-gradient(circle,#cc0088aa,#5500ff44);top:40%;left:30%;animation-delay:-5s;}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1);}33%{transform:translate(30px,-20px) scale(1.1);}66%{transform:translate(-20px,30px) scale(0.9);}}
+
+/* ===== BOTTOM GLOW STRIP ===== */
+.bottom-glow-strip{position:fixed;bottom:0;left:0;right:0;height:3px;z-index:999;background:linear-gradient(90deg,#9b00ff,#ff0055,#9b00ff);background-size:200% 100%;animation:stripShift 3s linear infinite;box-shadow:0 0 12px 2px #9b00ffaa,0 0 24px 4px #ff005566;}
+@keyframes stripShift{0%{background-position:0% 0%;}100%{background-position:200% 0%;}}
+.theme-ocean .bottom-glow-strip{background:linear-gradient(90deg,#0088ff,#00ccff,#0088ff);background-size:200% 100%;box-shadow:0 0 12px 2px #0088ffaa,0 0 24px 4px #00ccff66;}
+.theme-forest .bottom-glow-strip{background:linear-gradient(90deg,#00cc88,#00ff55,#00cc88);background-size:200% 100%;box-shadow:0 0 12px 2px #00cc88aa,0 0 24px 4px #00ff5566;}
+.theme-sunset .bottom-glow-strip{background:linear-gradient(90deg,#ff8800,#ff0055,#ff8800);background-size:200% 100%;box-shadow:0 0 12px 2px #ff8800aa,0 0 24px 4px #ff005566;}
+
+/* ===== SCREEN TRANSITIONS ===== */
+.screen{display:none;position:absolute;inset:0;flex-direction:column;background:transparent;z-index:1;}
+.screen.active{display:flex;animation:screenFadeIn 0.28s cubic-bezier(0.16,1,0.3,1);}
+@keyframes screenFadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.login-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 30% 20%,#9b00ff22,transparent 60%),radial-gradient(ellipse at 70% 80%,#ff005522,transparent 60%);}
+.login-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:32px 24px;width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:16px;backdrop-filter:blur(12px);}
+.app-name{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;background:linear-gradient(135deg,#d87bff,#ff6b9d,#d87bff);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;animation:nameShimmer 3s linear infinite;}
+@keyframes nameShimmer{0%{background-position:0%}100%{background-position:200%}}
+
+.top-bar{display:flex;align-items:center;padding:12px 16px;gap:10px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;position:relative;background:rgba(13,0,16,0.7);backdrop-filter:blur(10px);}
+.top-bar-title{flex:1;font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;text-align:center;}
+.top-bar-title.center-title{position:absolute;left:50%;transform:translateX(-50%);width:auto;}
+
+.app-sub{font-size:13px;color:rgba(255,255,255,0.4);text-align:center;}
+.inp{width:100%;padding:13px 16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;color:#e2e8f0;font-size:15px;outline:none;font-family:'Inter',sans-serif;}
+.inp:focus{border-color:rgba(155,0,255,0.5);}
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,#9b00ff,#ff0055);border:none;border-radius:14px;color:white;font-size:16px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:transform 0.1s,box-shadow 0.2s;}
+.btn:active{transform:scale(0.97);}
+.err{font-size:13px;color:#f87171;text-align:center;min-height:18px;}
+
+/* ===== BOTTOM NAV (5 items) ===== */
+.bottom-nav{display:flex;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;background:rgba(13,0,16,0.8);backdrop-filter:blur(10px);padding-bottom:env(safe-area-inset-bottom,0);}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 2px;cursor:pointer;position:relative;border-radius:12px;margin:4px 1px;transition:all 0.3s;}
+.nav-item.active .nav-label{color:#d87bff;}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 6px #9b00ff);}
+.nav-item.glow-active{box-shadow:0 0 0 2px rgba(155,0,255,0.6),0 0 16px rgba(155,0,255,0.3);border-radius:14px;}
+.nav-icon{font-size:18px;transition:filter 0.3s;}
+.nav-badge{position:absolute;top:4px;right:8px;width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#ff0055,#ff8800);box-shadow:0 0 8px #ff0055;animation:bp 1.5s infinite;}
+@keyframes bp{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}
+.nav-label{font-size:9px;color:rgba(255,255,255,0.4);margin-top:2px;}
+
+/* ===== STARS ANIMATION ===== */
+.star-anim{display:inline-block;animation:starPulse 1.5s ease-in-out infinite;}
+@keyframes starPulse{0%,100%{filter:drop-shadow(0 0 3px #ffd700) brightness(1);transform:scale(1);}50%{filter:drop-shadow(0 0 10px #ffd700) drop-shadow(0 0 20px #ff8800) brightness(1.4);transform:scale(1.2);}}
+.stars-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.2);border-radius:12px;width:100%;}
+
+/* ===== PROFILE AVATAR GLOW ===== */
+.profile-av{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:white;position:relative;}
+.profile-av-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;}
+.profile-av-glow{position:absolute;inset:-5px;border-radius:50%;background:conic-gradient(from 0deg,#9b00ff,#ff0055,#ff8800,#9b00ff);animation:avatarRotate 2s linear infinite;z-index:-1;filter:blur(4px);}
+@keyframes avatarRotate{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+
+/* ===== MESSAGE ANIMATIONS ===== */
+.msg-group{display:flex;flex-direction:column;animation:msgIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px) scale(0.95);}to{opacity:1;transform:translateY(0) scale(1);}}
+.msg-group.mine{align-items:flex-end;}
+.msg-row{display:flex;align-items:flex-end;gap:6px;}
+.bubble{max-width:72vw;padding:9px 13px;border-radius:18px;font-size:14px;line-height:1.45;word-break:break-word;}
+.msg-group:not(.mine) .bubble{background:rgba(255,255,255,0.08);border-radius:4px 18px 18px 18px;}
+.msg-group.mine .bubble{background:linear-gradient(135deg,#6600cc,#cc0044);border-radius:18px 4px 18px 18px;}
+
+/* ===== PARTICLES CANVAS ===== */
+#particleCanvas{position:fixed;inset:0;pointer-events:none;z-index:9999;}
+
+/* ===== REACTIONS ===== */
+.reaction-bar{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
+.reaction-btn{padding:2px 7px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.2s;}
+.reaction-btn:active,.reaction-btn.reacted{background:rgba(155,0,255,0.2);border-color:rgba(155,0,255,0.4);}
+.reaction-picker{position:absolute;bottom:40px;left:0;background:#1a0025;border:1px solid rgba(155,0,255,0.3);border-radius:14px;padding:8px;display:flex;gap:6px;z-index:100;box-shadow:0 8px 32px rgba(0,0,0,0.5);}
+.reaction-emoji{font-size:22px;cursor:pointer;padding:4px;border-radius:8px;transition:transform 0.15s;}
+.reaction-emoji:hover{transform:scale(1.3);}
+
+/* ===== VOICE MESSAGE ===== */
+.voice-btn{width:40px;height:40px;border-radius:50%;background:rgba(155,0,255,0.15);border:1px solid rgba(155,0,255,0.3);cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.voice-btn.recording{background:linear-gradient(135deg,#ff0055,#9b00ff);animation:recPulse 1s ease infinite;}
+@keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,0,85,0.4);}50%{box-shadow:0 0 0 10px rgba(255,0,85,0);}}
+.voice-bubble{display:flex;align-items:center;gap:8px;padding:8px 12px;}
+.voice-wave{display:flex;gap:2px;align-items:center;}
+.voice-wave span{width:3px;background:#d87bff;border-radius:2px;animation:waveAnim 0.8s ease-in-out infinite;}
+.voice-wave span:nth-child(1){height:8px;animation-delay:0s;}
+.voice-wave span:nth-child(2){height:16px;animation-delay:0.1s;}
+.voice-wave span:nth-child(3){height:12px;animation-delay:0.2s;}
+.voice-wave span:nth-child(4){height:20px;animation-delay:0.3s;}
+.voice-wave span:nth-child(5){height:10px;animation-delay:0.4s;}
+@keyframes waveAnim{0%,100%{transform:scaleY(1);}50%{transform:scaleY(0.4);}}
+.play-voice-btn{width:32px;height:32px;border-radius:50%;background:rgba(155,0,255,0.3);border:none;color:white;cursor:pointer;font-size:12px;flex-shrink:0;}
+
+.rating-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.1);overflow:hidden;width:100%;}
+.rating-fill{height:100%;border-radius:3px;transition:width 0.4s;}
+.title-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(155,0,255,0.4);color:#d87bff;background:rgba(155,0,255,0.1);}
+.title-badge.best{border-color:rgba(255,215,0,0.4);color:#ffd700;background:rgba(255,215,0,0.1);}
+.title-badge.worst{border-color:rgba(220,50,50,0.3);color:#f87171;background:rgba(220,50,50,0.1);}
+.ach-item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.06);}
+.ach-item.unlocked{background:rgba(155,0,255,0.07);border-color:rgba(155,0,255,0.2);}
+.ach-item.locked{opacity:0.35;}
+.gift-btn{padding:7px 13px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:10px;color:#000;font-size:12px;font-weight:700;cursor:pointer;}
+.report-btn{width:100%;padding:11px;background:rgba(220,50,50,0.1);border:1px solid rgba(220,50,50,0.2);border-radius:12px;color:#f87171;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;margin-top:6px;}
+.praise-btn{width:100%;padding:11px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);border-radius:12px;color:#4ade80;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;margin-top:6px;}
+.dm-btn{width:100%;padding:11px;background:rgba(155,0,255,0.1);border:1px solid rgba(155,0,255,0.2);border-radius:12px;color:#d87bff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;margin-top:6px;}
+.list{flex:1;overflow-y:auto;padding:8px;}
+.chat-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;cursor:pointer;transition:background 0.2s;}
+.chat-item:active{background:rgba(255,255,255,0.05);}
+.av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:white;flex-shrink:0;}
+.chat-info{flex:1;min-width:0;}
+.chat-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chat-last{font-size:12px;color:rgba(255,255,255,0.4);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chat-time{font-size:11px;color:rgba(255,255,255,0.3);}
+.unread-dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#9b00ff,#ff0055);flex-shrink:0;box-shadow:0 0 8px #9b00ffaa;animation:bp 1.5s infinite;}
+.search-bar{margin:8px;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:14px;color:#e2e8f0;font-size:14px;outline:none;font-family:'Inter',sans-serif;width:calc(100% - 16px);}
+.tab-bar{display:flex;padding:0 8px;gap:4px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;}
+.tab{padding:10px 14px;font-size:13px;cursor:pointer;color:rgba(255,255,255,0.4);border-bottom:2px solid transparent;}
+.tab.active{color:#d87bff;border-bottom-color:#9b00ff;}
+#chatScreen{z-index:10;}
+.chat-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:2px;}
+.msg-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;cursor:pointer;}
+.msg-time{font-size:10px;color:rgba(255,255,255,0.25);margin:0 4px 2px;}
+.msg-sender{font-size:11px;font-weight:600;margin:6px 0 2px 36px;}
+.msg-date{text-align:center;font-size:11px;color:rgba(255,255,255,0.3);margin:8px 0;}
+.chat-input-bar{padding:8px 12px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:rgba(13,0,16,0.7);backdrop-filter:blur(10px);}
+.chat-inp{flex:1;padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;color:#e2e8f0;font-size:14px;outline:none;font-family:'Inter',sans-serif;resize:none;max-height:100px;}
+.send-btn{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#9b00ff,#ff0055);border:none;cursor:pointer;font-size:16px;flex-shrink:0;transition:transform 0.15s,box-shadow 0.2s;}
+.send-btn:active{transform:scale(0.9);}
+.ai-toggle{position:absolute;bottom:70px;right:14px;width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#ff0055,#9b00ff);border:none;cursor:pointer;font-size:20px;box-shadow:0 4px 20px rgba(155,0,255,0.4);}
+.ai-panel{position:absolute;bottom:60px;left:0;right:0;background:#1a0025;border-top:1px solid rgba(155,0,255,0.3);padding:12px;display:none;flex-direction:column;gap:10px;max-height:55vh;z-index:5;}
+.ai-panel.open{display:flex;}
+.ai-title{font-size:13px;font-weight:600;color:#d87bff;display:flex;justify-content:space-between;}
+.ai-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;max-height:180px;}
+.ai-msg{padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.4;}
+.ai-msg.user{background:rgba(155,0,255,0.15);text-align:right;}
+.ai-msg.ai{background:rgba(255,255,255,0.05);}
+.ai-input-row{display:flex;gap:8px;}
+.ai-inp{flex:1;padding:9px 13px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#e2e8f0;font-size:13px;outline:none;font-family:'Inter',sans-serif;}
+.ai-send-btn{padding:9px 14px;background:linear-gradient(135deg,#9b00ff,#ff0055);border:none;border-radius:12px;color:white;cursor:pointer;}
+.ai-to-chat{width:100%;padding:8px;background:rgba(155,0,255,0.1);border:1px solid rgba(155,0,255,0.2);border-radius:10px;color:#d87bff;font-size:13px;cursor:pointer;display:none;}
+.post-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:18px;padding:14px;margin-bottom:10px;backdrop-filter:blur(4px);}
+.post-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.post-nick{font-size:14px;font-weight:600;cursor:pointer;}
+.post-time-sm{font-size:11px;color:rgba(255,255,255,0.3);}
+.post-text{font-size:14px;line-height:1.55;margin-bottom:12px;}
+.post-actions{display:flex;gap:14px;align-items:center;}
+.post-action{font-size:13px;color:rgba(255,255,255,0.4);cursor:pointer;padding:4px;}
+.post-action.liked{color:#ff6b9d;}
+.post-comments{margin-top:10px;border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;}
+.comment{display:flex;gap:8px;margin-bottom:8px;animation:msgIn 0.25s ease;}
+.comment-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;}
+.comment-bubble{background:rgba(255,255,255,0.05);border-radius:10px;padding:7px 10px;flex:1;}
+.comment-nick{font-size:11px;font-weight:600;color:#d87bff;margin-bottom:2px;}
+.comment-inp-row{display:flex;gap:6px;margin-top:8px;}
+.comment-inp{flex:1;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#e2e8f0;font-size:13px;outline:none;font-family:'Inter',sans-serif;}
+.small-send{padding:8px 12px;background:linear-gradient(135deg,#9b00ff,#ff0055);border:none;border-radius:10px;color:white;cursor:pointer;}
+.profile-wrap{flex:1;overflow-y:auto;padding:12px 12px 80px;}
+.profile-card{background:rgba(255,255,255,0.03);border:1px solid rgba(155,0,255,0.15);border-radius:20px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:12px;backdrop-filter:blur(8px);}
+.profile-name{font-size:20px;font-weight:700;}
+.profile-bio{font-size:13px;color:rgba(255,255,255,0.4);text-align:center;}
+.profile-section{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:14px;margin-bottom:10px;}
+.profile-section-title{font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;}
+.profile-row{display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);}
+.profile-row:last-child{border-bottom:none;}
+.profile-row-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.profile-row-text{font-size:14px;font-weight:500;}
+.profile-row-sub{font-size:11px;color:rgba(255,255,255,0.3);margin-top:1px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:50;align-items:flex-end;}
+.modal-overlay.open{display:flex;animation:modalIn 0.25s ease;}
+@keyframes modalIn{from{opacity:0;}to{opacity:1;}}
+.modal{background:#140020;border-radius:24px 24px 0 0;padding:20px;width:100%;max-height:80vh;overflow-y:auto;backdrop-filter:blur(12px);animation:modalSlideIn 0.28s cubic-bezier(0.16,1,0.3,1);}
+@keyframes modalSlideIn{from{transform:translateY(40px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:16px;}
+.member-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.remove-btn{padding:5px 10px;background:rgba(220,50,50,0.12);border:1px solid rgba(220,50,50,0.25);border-radius:8px;color:#f87171;font-size:12px;cursor:pointer;}
+.add-wrap{display:flex;gap:8px;margin-top:10px;}
+.small-btn{padding:10px 14px;background:linear-gradient(135deg,#9b00ff,#ff0055);border:none;border-radius:12px;color:white;font-size:13px;cursor:pointer;}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;color:rgba(255,255,255,0.25);font-size:14px;padding:40px;}
+.back-btn{cursor:pointer;font-size:22px;padding:4px 8px;}
+.theme-opt{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;cursor:pointer;border:2px solid transparent;margin-bottom:6px;}
+.theme-opt.selected{border-color:#9b00ff;}
+.theme-preview{width:40px;height:40px;border-radius:10px;flex-shrink:0;}
+.banned-screen{position:fixed;inset:0;z-index:100;background:#0d0010;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;}
+.banned-screen.show{display:flex;}
+
+/* ===== GAME SCREEN ===== */
+#gameScreen{z-index:5;}
+.game-wrap{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;align-items:center;}
+.game-card{background:rgba(255,255,255,0.04);border:1px solid rgba(155,0,255,0.2);border-radius:20px;padding:20px;width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:14px;backdrop-filter:blur(8px);}
+.game-board{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;}
+.game-cell{aspect-ratio:1;border-radius:12px;background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;transition:all 0.2s;user-select:none;}
+.game-cell:active{transform:scale(0.92);}
+.game-cell.revealed{background:rgba(155,0,255,0.15);border-color:rgba(155,0,255,0.4);}
+.game-cell.matched{background:rgba(74,222,128,0.15);border-color:rgba(74,222,128,0.4);animation:matchPop 0.4s ease;}
+.game-cell.wrong{background:rgba(248,113,113,0.15);border-color:rgba(248,113,113,0.4);}
+@keyframes matchPop{0%{transform:scale(1);}50%{transform:scale(1.15);}100%{transform:scale(1);}}
+.game-stats{display:flex;justify-content:space-between;width:100%;font-size:13px;color:rgba(255,255,255,0.6);}
+.game-btn{padding:12px 24px;background:linear-gradient(135deg,#9b00ff,#ff0055);border:none;border-radius:14px;color:white;font-size:15px;font-weight:600;cursor:pointer;}
+.icon-btn{width:38px;height:38px;border-radius:12px;background:rgba(155,0,255,0.15);border:1px solid rgba(155,0,255,0.25);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;}
+
+/* ===== SHOP SCREEN ===== */
+.shop-wrap{flex:1;overflow-y:auto;padding:12px 12px 80px;}
+.sub-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:22px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;transition:transform 0.2s;}
+.sub-card:active{transform:scale(0.98);}
+.sub-card.popular{border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.03);}
+.sub-card.best-val{border-color:rgba(155,0,255,0.4);background:rgba(155,0,255,0.03);}
+.sub-badge{position:absolute;top:12px;right:12px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;}
+.sub-badge.hot{background:rgba(255,0,85,0.2);border:1px solid rgba(255,0,85,0.4);color:#ff6b9d;}
+.sub-badge.deal{background:rgba(155,0,255,0.2);border:1px solid rgba(155,0,255,0.4);color:#d87bff;}
+.sub-price{font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;background:linear-gradient(135deg,#d87bff,#ff6b9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sub-period{font-size:13px;color:rgba(255,255,255,0.4);margin-top:2px;}
+.sub-features{margin:14px 0;display:flex;flex-direction:column;gap:8px;}
+.sub-feat{display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.8);}
+.sub-feat-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0;}
+.sub-buy-btn{width:100%;padding:14px;background:linear-gradient(135deg,#9b00ff,#ff0055);border:none;border-radius:14px;color:white;font-size:16px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:transform 0.1s;}
+.sub-buy-btn:active{transform:scale(0.97);}
+.sub-buy-btn.gold{background:linear-gradient(135deg,#ffd700,#ff8800);}
+.active-sub-banner{background:linear-gradient(135deg,rgba(155,0,255,0.15),rgba(255,0,85,0.1));border:1px solid rgba(155,0,255,0.3);border-radius:16px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;}
+
+/* ===== FOUNDER STYLES ===== */
+.founder-badge-inline{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:800;background:linear-gradient(135deg,rgba(255,215,0,0.3),rgba(255,140,0,0.2));border:1px solid rgba(255,215,0,0.7);color:#ffd700;letter-spacing:0.3px;white-space:nowrap;flex-shrink:0;}
+.founder-post-banner{display:flex;align-items:center;gap:6px;padding:6px 10px;background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(255,140,0,0.05));border:1px solid rgba(255,215,0,0.25);border-radius:10px;margin-bottom:10px;font-size:12px;color:#ffd700;font-weight:600;}
+.founder-profile-card{background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,140,0,0.07),rgba(155,0,255,0.08));border:2px solid rgba(255,215,0,0.5);border-radius:22px;padding:18px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;}
+.founder-glow{box-shadow:0 0 0 3px #ffd700,0 0 0 6px rgba(255,165,0,0.3),0 0 24px 8px rgba(255,215,0,0.45)!important;animation:founderGlow 2s ease-in-out infinite;}
+@keyframes founderGlow{0%,100%{box-shadow:0 0 0 3px #ffd700,0 0 0 6px rgba(255,165,0,0.3),0 0 24px 8px rgba(255,215,0,0.45);}50%{box-shadow:0 0 0 3px #ff8800,0 0 0 6px rgba(255,215,0,0.5),0 0 36px 12px rgba(255,165,0,0.6);}}
+/* Subscriber avatar glows */
+.sub-glow-month{box-shadow:0 0 0 3px #a855f7,0 0 16px 4px rgba(168,85,247,0.5)!important;}
+.sub-glow-quarter{box-shadow:0 0 0 3px #eab308,0 0 16px 4px rgba(234,179,8,0.5)!important;}
+.sub-glow-year{box-shadow:0 0 0 3px #ffd700,0 0 20px 8px rgba(255,215,0,0.6)!important;animation:royalGlow 2s ease-in-out infinite;}
+@keyframes royalGlow{0%,100%{box-shadow:0 0 0 3px #ffd700,0 0 20px 8px rgba(255,215,0,0.6);}50%{box-shadow:0 0 0 3px #ffaa00,0 0 30px 12px rgba(255,215,0,0.8);}}
+</style>
+</head>
+<body>
+
+<!-- ANIMATED BG -->
+<div class="bg-anim">
+  <div class="bg-orb bg-orb1"></div>
+  <div class="bg-orb bg-orb2"></div>
+  <div class="bg-orb bg-orb3"></div>
+</div>
+<!-- GLOW STRIP -->
+<div class="bottom-glow-strip" id="glowStrip"></div>
+<!-- PARTICLES -->
+<canvas id="particleCanvas"></canvas>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="screen active">
+  <div class="login-wrap">
+    <div class="login-card" style="text-align:center;">
+      <div style="width:90px;height:90px;border-radius:26px;background:linear-gradient(135deg,#9b00ff,#ff0055);display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 8px 32px rgba(155,0,255,0.5),0 0 0 3px rgba(255,255,255,0.08);margin-bottom:4px;">💬</div>
+      <div class="app-name" style="text-align:center;width:100%;">FitChat</div>
+      <div class="app-sub">Войди по никнейму и начни общаться</div>
+      <input class="inp" id="nickInp" placeholder="Никнейм..." maxlength="20" autocomplete="off">
+      <input class="inp" id="bioInp" placeholder="О себе (необязательно)..." maxlength="80" autocomplete="off">
+      <button class="btn" id="loginBtn">Войти ⚡</button>
+      <div class="err" id="loginErr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CHATS -->
+<div id="chatsScreen" class="screen">
+  <div class="top-bar">
+    <div style="width:38px;"></div>
+    <div class="top-bar-title" style="position:relative;left:auto;transform:none;">💬 FitChat</div>
+    <div class="icon-btn" onclick="openNewChat()">✏️</div>
+  </div>
+  <input class="search-bar" placeholder="🔍 Поиск..." oninput="filterChats(this.value)">
+  <div class="tab-bar">
+    <div class="tab active" onclick="setTab('all',this)">Все</div>
+    <div class="tab" onclick="setTab('dm',this)">Личные</div>
+    <div class="tab" onclick="setTab('group',this)">Группы</div>
+  </div>
+  <div class="list" id="chatsList"><div class="empty"><div>💬</div><div>Нет чатов. Нажми ✏️!</div></div></div>
+  <div class="bottom-nav" id="bnChats">
+    <div class="nav-item active" id="nb1" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
+    <div class="nav-item" id="nb2" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
+    <div class="nav-item" id="nb3" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игры</div></div>
+    <div class="nav-item" id="nb3s" onclick="goTabNav('shop',this)"><div class="nav-icon">🛒</div><div class="nav-label">Shop</div></div>
+    <div class="nav-item" id="nb4" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
+  </div>
+</div>
+
+<!-- POSTS -->
+<div id="postsScreen" class="screen">
+  <div class="top-bar">
+    <div style="width:38px;"></div>
+    <div class="top-bar-title">📰 Лента</div>
+    <div class="icon-btn" onclick="openNewPost()">✏️</div>
+  </div>
+  <div class="list" id="postsList" style="padding-bottom:70px;"></div>
+  <div class="bottom-nav">
+    <div class="nav-item" id="nb5" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
+    <div class="nav-item active" id="nb6" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
+    <div class="nav-item" id="nb7" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игры</div></div>
+    <div class="nav-item" id="nb7s" onclick="goTabNav('shop',this)"><div class="nav-icon">🛒</div><div class="nav-label">Shop</div></div>
+    <div class="nav-item" id="nb8" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div id="profileScreen" class="screen">
+  <div class="top-bar">
+    <div style="width:38px;"></div>
+    <div class="top-bar-title">👤 Профиль</div>
+    <div style="width:38px;"></div>
+  </div>
+  <div class="profile-wrap" id="profileWrap"></div>
+  <div class="bottom-nav">
+    <div class="nav-item" id="nb9" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
+    <div class="nav-item" id="nb10" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
+    <div class="nav-item" id="nb11" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игры</div></div>
+    <div class="nav-item" id="nb11s" onclick="goTabNav('shop',this)"><div class="nav-icon">🛒</div><div class="nav-label">Shop</div></div>
+    <div class="nav-item active" id="nb12" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="gameScreen" class="screen">
+  <div class="top-bar">
+    <div style="width:38px;"></div>
+    <div class="top-bar-title">🎮 Игры</div>
+    <div style="width:38px;"></div>
+  </div>
+  <div class="game-wrap" id="gameWrap"></div>
+  <div class="bottom-nav">
+    <div class="nav-item" id="nb13" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
+    <div class="nav-item" id="nb14" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
+    <div class="nav-item active" id="nb15" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игры</div></div>
+    <div class="nav-item" id="nb15s" onclick="goTabNav('shop',this)"><div class="nav-icon">🛒</div><div class="nav-label">Shop</div></div>
+    <div class="nav-item" id="nb16" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
+  </div>
+</div>
+
+<!-- SHOP SCREEN -->
+<div id="shopScreen" class="screen">
+  <div class="top-bar">
+    <div style="width:38px;"></div>
+    <div class="top-bar-title">🛒 Shop</div>
+    <div style="width:38px;"></div>
+  </div>
+  <div class="shop-wrap" id="shopWrap"></div>
+  <div class="bottom-nav">
+    <div class="nav-item" id="nb17" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
+    <div class="nav-item" id="nb18" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
+    <div class="nav-item" id="nb19" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игры</div></div>
+    <div class="nav-item active" id="nb20" onclick="goTabNav('shop',this)"><div class="nav-icon">🛒</div><div class="nav-label">Shop</div></div>
+    <div class="nav-item" id="nb21" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div id="chatScreen" class="screen" style="z-index:10;">
+  <div class="top-bar">
+    <span class="back-btn" onclick="backToChats()">←</span>
+    <div id="chatAv" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0;cursor:pointer;" onclick="viewChatUserProfile()"></div>
+    <div class="top-bar-title" id="chatName" style="font-size:15px;cursor:pointer;" onclick="viewChatUserProfile()"></div>
+    <div class="icon-btn" id="grpSettBtn" onclick="openGroupSettings()" style="display:none;">⚙️</div>
+  </div>
+  <div class="chat-messages" id="chatMsgs"></div>
+  <div class="chat-input-bar">
+    <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎤</button>
+    <textarea class="chat-inp" id="chatInp" placeholder="Сообщение..." rows="1" oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+    <button class="send-btn" id="sendMsgBtn" onclick="sendMsg()">➤</button>
+  </div>
+  <button class="ai-toggle" onclick="toggleAI()">🤖</button>
+  <div class="ai-panel" id="aiPanel">
+    <div class="ai-title"><span>🤖 ИИ Ассистент</span><span id="aiLimit" style="font-size:11px;color:rgba(255,255,255,0.4);">0/15</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      <span style="padding:5px 10px;background:rgba(155,0,255,0.12);border:1px solid rgba(155,0,255,0.25);border-radius:20px;color:#d87bff;font-size:12px;cursor:pointer;" onclick="qAI('Орфография')">✏️ Орфография</span>
+      <span style="padding:5px 10px;background:rgba(155,0,255,0.12);border:1px solid rgba(155,0,255,0.25);border-radius:20px;color:#d87bff;font-size:12px;cursor:pointer;" onclick="qAI('Ответ')">💬 Ответ</span>
+      <span style="padding:5px 10px;background:rgba(155,0,255,0.12);border:1px solid rgba(155,0,255,0.25);border-radius:20px;color:#d87bff;font-size:12px;cursor:pointer;" onclick="qAI('Вежливо')">🎩 Вежливо</span>
+      <span style="padding:5px 10px;background:rgba(155,0,255,0.12);border:1px solid rgba(155,0,255,0.25);border-radius:20px;color:#d87bff;font-size:12px;cursor:pointer;" onclick="qAI('Поговорить')">💭 Поговорить</span>
+    </div>
+    <div class="ai-msgs" id="aiMsgs"></div>
+    <div class="ai-input-row">
+      <input class="ai-inp" id="aiInp" placeholder="Спроси у ИИ..." onkeydown="if(event.key==='Enter')sendAI()">
+      <button class="ai-send-btn" onclick="sendAI()">➤</button>
+    </div>
+    <button class="ai-to-chat" id="aiToChat" onclick="aiInsert()">📋 Вставить в чат</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title" id="modalTitle" style="margin-bottom:0;"></div>
+      <span onclick="closeModal()" style="cursor:pointer;font-size:20px;color:rgba(255,255,255,0.4);">✕</span>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- BANNED -->
+<div class="banned-screen" id="bannedScreen">
+  <div style="font-size:64px;">🚫</div>
+  <div style="font-size:22px;font-weight:700;color:#f87171;">Аккаунт заблокирован</div>
+  <div style="font-size:13px;color:rgba(255,255,255,0.4);text-align:center;">Администратор заблокировал этот аккаунт.</div>
+  <button onclick="logout()" style="padding:13px 28px;background:rgba(220,50,50,0.15);border:1px solid rgba(220,50,50,0.3);border-radius:12px;color:#f87171;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;">Выйти</button>
+</div>
+
+<script>
+// ===== PWA MANIFEST =====
+(function(){
+  const manifest={name:'FitChat',short_name:'FitChat',start_url:'./',display:'standalone',background_color:'#0d0010',theme_color:'#0d0010',orientation:'portrait',icons:[{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="40" fill="%239b00ff"/><text y="130" x="96" text-anchor="middle" font-size="110">💬</text></svg>',sizes:'192x192',type:'image/svg+xml'},{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="%239b00ff"/><text y="360" x="256" text-anchor="middle" font-size="300">💬</text></svg>',sizes:'512x512',type:'image/svg+xml'}]};
+  const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  document.getElementById('manifestLink').href=URL.createObjectURL(blob);
+})();
+
+// ===== SERVICE WORKER (PWA) =====
+if('serviceWorker' in navigator){
+  const swCode=`
+    self.addEventListener('install',e=>self.skipWaiting());
+    self.addEventListener('activate',e=>self.clients.claim());
+    self.addEventListener('fetch',e=>{
+      if(e.request.destination==='document'){
+        e.respondWith(fetch(e.request).catch(()=>caches.match('/')));
+      }
+    });
+  `;
+  const swBlob=new Blob([swCode],{type:'text/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+}
+
+const FB={apiKey:"AIzaSyADCa1uZpA-rhtmnNcf96UaBxqcY7lDL3M",authDomain:"fitchat-6d903.firebaseapp.com",databaseURL:"https://fitchat-6d903-default-rtdb.firebaseio.com",projectId:"fitchat-6d903",storageBucket:"fitchat-6d903.firebasestorage.app",messagingSenderId:"1060135785203",appId:"1:1060135785203:web:ca4123d7d551ee22889d86"};
+firebase.initializeApp(FB);
+const db=firebase.database();
+const COLORS=['#9b00ff','#ff0055','#0088ff','#00cc88','#ff8800','#ff44aa','#00bbff'];
+const ADMIN='Midov_Gisa';
+const AI_LIMIT=15;
+
+// ===== FOUNDER & SUBSCRIBER HELPERS =====
+function isFounder(nick){return nick===ADMIN;}
+function founderBadgeHtml(){return '<span class="founder-badge-inline">👑 Основатель</span>';}
+function getSubGlowClass(sub){
+  if(!sub||!sub.until||sub.until<Date.now())return '';
+  if(sub.planId==='year')return 'sub-glow-year';
+  if(sub.planId==='quarter')return 'sub-glow-quarter';
+  return 'sub-glow-month';
+}
+function getSubBadgeHtml(sub){
+  if(!sub||!sub.until||sub.until<Date.now())return '';
+  return `<span style="font-size:13px;margin-left:2px;">${sub.badge||''}</span>`;
+}
+let myNick='',myBio='',curChat=null,curType='',curTab='all',chats=[],lastAI='',myStars=0;
+let isRecording=false,mediaRecorder=null,audioChunks=[];
+let navGlowSet=new Set();
+let gameState=null;
+
+function gc(s){let h=0;for(let c of s)h=Math.imul(31,h)+c.charCodeAt(0)|0;return COLORS[Math.abs(h)%COLORS.length];}
+function sn(n){return n.trim().replace(/\s+/g,'_').replace(/[.#$\[\]\/]/g,'_');}
+function tdk(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+
+// ===== SMOOTH SCREEN SWITCH =====
+function ss(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const t=document.getElementById(id);
+  if(t){t.classList.add('active');}
+}
+
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+function openModal(title,body){
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalBody').innerHTML=body;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+// ===== THEME SYSTEM =====
+const themeColors={
+  default:{g1:'#9b00ff',g2:'#ff0055',glow1:'#9b00ffaa',glow2:'#ff005566'},
+  ocean:{g1:'#0088ff',g2:'#00ccff',glow1:'#0088ffaa',glow2:'#00ccff66'},
+  forest:{g1:'#00cc88',g2:'#00ff55',glow1:'#00cc88aa',glow2:'#00ff5566'},
+  sunset:{g1:'#ff8800',g2:'#ff0055',glow1:'#ff8800aa',glow2:'#ff005566'},
+  royal:{g1:'#ffd700',g2:'#ff8800',glow1:'#ffd700aa',glow2:'#ff880066'}
+};
+function applyTheme(th){
+  document.body.className=th!=='default'?'theme-'+th:'';
+  const tc=themeColors[th]||themeColors.default;
+  const strip=document.getElementById('glowStrip');
+  if(strip){strip.style.background=`linear-gradient(90deg,${tc.g1},${tc.g2},${tc.g1})`;strip.style.backgroundSize='200% 100%';strip.style.boxShadow=`0 0 12px 2px ${tc.glow1},0 0 24px 4px ${tc.glow2}`;}
+  document.querySelectorAll('.profile-av-glow').forEach(el=>{el.style.background=`conic-gradient(from 0deg,${tc.g1},${tc.g2},${tc.g1})`;});
+  const orb1=document.querySelector('.bg-orb1'),orb2=document.querySelector('.bg-orb2'),orb3=document.querySelector('.bg-orb3');
+  const themeOrbs={
+    default:{o1:'radial-gradient(circle,#9b00ff88,#ff005544)',o2:'radial-gradient(circle,#ff005566,#9b00ff44)',o3:'radial-gradient(circle,#cc0088aa,#5500ff44)',bg:'#0d0010'},
+    ocean:{o1:'radial-gradient(circle,#0088ff88,#00ccff44)',o2:'radial-gradient(circle,#00ccff66,#0044ff44)',o3:'radial-gradient(circle,#0066ccaa,#00aaffaa)',bg:'#00071a'},
+    forest:{o1:'radial-gradient(circle,#00cc8888,#00ff5544)',o2:'radial-gradient(circle,#00ff5566,#00aa4444)',o3:'radial-gradient(circle,#00aa66aa,#004422aa)',bg:'#001a08'},
+    sunset:{o1:'radial-gradient(circle,#ff880088,#ff005544)',o2:'radial-gradient(circle,#ff005566,#ff880044)',o3:'radial-gradient(circle,#ff6600aa,#aa002244)',bg:'#1a0500'}
+  };
+  const ob=themeOrbs[th]||themeOrbs.default;
+  if(orb1)orb1.style.background=ob.o1;
+  if(orb2)orb2.style.background=ob.o2;
+  if(orb3)orb3.style.background=ob.o3;
+  document.body.style.background=ob.bg;
+  document.querySelectorAll('.btn,.send-btn,.game-btn,.small-btn,.small-send,.ai-send-btn').forEach(el=>{el.style.background=`linear-gradient(135deg,${tc.g1},${tc.g2})`;});
+  document.querySelectorAll('.msg-group.mine .bubble').forEach(el=>{el.style.background=`linear-gradient(135deg,${tc.g1}aa,${tc.g2}aa)`;});
+}
+window.setTheme=(th,el)=>{document.querySelectorAll('.theme-opt').forEach(o=>o.classList.remove('selected'));el.classList.add('selected');localStorage.setItem('fct',th);applyTheme(th);}
+
+// ===== PARTICLES =====
+const pCanvas=document.getElementById('particleCanvas');
+const pCtx=pCanvas.getContext('2d');
+pCanvas.width=window.innerWidth;pCanvas.height=window.innerHeight;
+window.addEventListener('resize',()=>{pCanvas.width=window.innerWidth;pCanvas.height=window.innerHeight;});
+let particles=[];
+function spawnParticles(x,y){
+  const th=localStorage.getItem('fct')||'default';
+  const tc=themeColors[th]||themeColors.default;
+  const cols=[tc.g1,tc.g2,'#ffffff','#ffd700'];
+  for(let i=0;i<18;i++){
+    particles.push({x,y,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*6-3,life:1,r:Math.random()*5+2,color:cols[Math.floor(Math.random()*cols.length)]});
+  }
+}
+function animParticles(){
+  pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+  particles=particles.filter(p=>p.life>0);
+  particles.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.15;p.life-=0.03;
+    pCtx.globalAlpha=Math.max(0,p.life);
+    pCtx.beginPath();pCtx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    pCtx.fillStyle=p.color;pCtx.fill();
+  });
+  pCtx.globalAlpha=1;
+  requestAnimationFrame(animParticles);
+}
+animParticles();
+
+document.getElementById('sendMsgBtn').addEventListener('click',function(e){
+  const r=this.getBoundingClientRect();
+  spawnParticles(r.left+r.width/2,r.top+r.height/2);
+});
+
+// ===== SOUND =====
+function playSendSound(){
+  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.setValueAtTime(880,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(440,ctx.currentTime+0.1);g.gain.setValueAtTime(0.15,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);o.start();o.stop(ctx.currentTime+0.15);}catch(e){}
+}
+
+// LOGIN
+document.getElementById('loginBtn').onclick=doLogin;
+document.getElementById('nickInp').onkeydown=e=>{if(e.key==='Enter')doLogin();};
+
+function doLogin(){
+  const raw=document.getElementById('nickInp').value.trim();
+  const bio=document.getElementById('bioInp').value.trim();
+  const err=document.getElementById('loginErr');
+  if(!raw||raw.length<2){err.textContent='Минимум 2 символа';return;}
+  const nick=sn(raw);
+  err.style.color='#d87bff';
+  err.textContent='Подключение...';
+  const t=setTimeout(()=>{err.style.color='#f87171';err.textContent='Нет ответа. Проверь интернет.';},10000);
+  db.ref('users/'+nick).once('value').then(snap=>{
+    clearTimeout(t);
+    const u=snap.val()||{};
+    if(u.banned){document.getElementById('bannedScreen').classList.add('show');return;}
+    myNick=nick;myBio=bio;
+    localStorage.setItem('fn',nick);localStorage.setItem('fb',bio);
+    const stars=u.stars||0;myStars=stars;
+    db.ref('users/'+nick).set({nick,bio,color:gc(nick),online:true,lastSeen:Date.now(),rating:u.rating!=null?u.rating:50,stars,joinDate:u.joinDate||Date.now(),claimedAchs:u.claimedAchs||{},subscription:u.subscription||null});
+    if(u.riskWarning) setTimeout(()=>alert('⚠️ Твой рейтинг ниже 25%! Риск бана от администратора.'),1500);
+    setInterval(()=>db.ref('users/'+nick+'/lastSeen').set(Date.now()),30000);
+    window.onbeforeunload=()=>db.ref('users/'+nick+'/online').set(false);
+    const th=localStorage.getItem('fct')||'default';applyTheme(th);
+    ss('chatsScreen');
+    ensureFounderChat();
+    loadChats();loadPosts();renderProfile();updateAILimit();startListeners();
+  }).catch(e=>{clearTimeout(t);err.style.color='#f87171';err.textContent='Ошибка: '+e.message;});
+}
+
+function ensureFounderChat(){
+  if(myNick===ADMIN)return;
+  const dmId=[myNick,ADMIN].sort().join('_');
+  db.ref('dms/'+dmId).once('value').then(s=>{
+    if(!s.val()){
+      db.ref('dms/'+dmId).set({lastMsg:'👋 Добро пожаловать в FitChat!',lastTs:Date.now()});
+      db.ref('dms/'+dmId+'/messages').push({nick:ADMIN,text:'👋 Привет! Я основатель FitChat. Добро пожаловать! Если что-то нужно — пиши.',ts:Date.now()});
+    }
+  });
+}
+
+(()=>{const n=localStorage.getItem('fn'),b=localStorage.getItem('fb')||'';if(n){document.getElementById('nickInp').value=n;document.getElementById('bioInp').value=b;setTimeout(doLogin,400);}})();
+
+function logout(){if(myNick)db.ref('users/'+myNick+'/online').set(false);myNick='';myBio='';localStorage.removeItem('fn');localStorage.removeItem('fb');ss('loginScreen');document.getElementById('nickInp').value='';document.getElementById('bioInp').value='';document.getElementById('loginErr').textContent='';}
+
+// TABS NAV
+function goTabNav(tab,el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const elId=el.id;
+  if(elId&&!navGlowSet.has(elId)){navGlowSet.add(elId);el.classList.add('glow-active');setTimeout(()=>el.classList.remove('glow-active'),1200);}
+  el.classList.add('active');
+  if(tab==='chats'){ss('chatsScreen');}
+  else if(tab==='posts'){ss('postsScreen');loadPosts();}
+  else if(tab==='game'){ss('gameScreen');renderGame();}
+  else if(tab==='shop'){ss('shopScreen');renderShop();}
+  else if(tab==='profile'){ss('profileScreen');renderProfile();}
+  if(tab==='chats') clearBadge(['nb1','nb5','nb9','nb13','nb17']);
+  if(tab==='posts') clearBadge(['nb2','nb6','nb10','nb14','nb18']);
+  if(tab==='profile') clearBadge(['nb4','nb8','nb12','nb16','nb21']);
+}
+function setTab(tab,el){curTab=tab;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderChats();}
+function filterChats(q){renderChats(q);}
+
+// CHATS
+function loadChats(){
+  db.ref('groups').on('value',snap=>{
+    chats=chats.filter(c=>c.type!=='group');
+    Object.entries(snap.val()||{}).forEach(([id,g])=>{if(g.members&&g.members[myNick])chats.push({id,type:'group',name:g.name,color:g.color||'#9b00ff',lastMsg:g.lastMsg||'',lastTs:g.lastTs||0,unread:g.unread&&g.unread[myNick]});});
+    renderChats();
+  });
+  db.ref('dms').on('value',snap=>{
+    chats=chats.filter(c=>c.type!=='dm');
+    const hidden=JSON.parse(localStorage.getItem('hiddenChats')||'[]');
+    Object.entries(snap.val()||{}).forEach(([id,d])=>{if(id.includes(myNick)&&!hidden.includes(id)){const other=id.split('_').find(p=>p!==myNick)||id;chats.push({id,type:'dm',name:other,color:gc(other),lastMsg:d.lastMsg||'',lastTs:d.lastTs||0,unread:d.unread&&d.unread[myNick]});}});
+    renderChats();
+  });
+}
+
+function renderChats(q=''){
+  const el=document.getElementById('chatsList');
+  let list=[...chats];
+  if(curTab==='dm')list=list.filter(c=>c.type==='dm');
+  if(curTab==='group')list=list.filter(c=>c.type==='group');
+  if(q)list=list.filter(c=>c.name.toLowerCase().includes(q.toLowerCase()));
+  list.sort((a,b)=>b.lastTs-a.lastTs);
+  if(!list.length){el.innerHTML='<div class="empty"><div>💬</div><div>Нет чатов. Нажми ✏️!</div></div>';return;}
+  const th=localStorage.getItem('fct')||'default';
+  const tc=themeColors[th]||themeColors.default;
+  el.innerHTML=list.map(c=>`<div class="chat-item" style="position:relative;" onclick="openChat('${c.id}','${c.type}','${c.name}','${c.color}')">
+    <div class="av" style="background:${c.color}">${c.name[0].toUpperCase()}</div>
+    <div class="chat-info"><div class="chat-name">${c.name}</div><div class="chat-last">${c.lastMsg||'Нет сообщений'}</div></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+      <div class="chat-time">${c.lastTs?new Date(c.lastTs).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}):''}</div>
+      ${c.unread?`<div style="width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,${tc.g1},${tc.g2});box-shadow:0 0 6px ${tc.g1};"></div>`:''}
+    </div>
+    <div onclick="event.stopPropagation();deleteChat('${c.id}','${c.type}')" style="padding:6px 8px;margin-left:6px;color:rgba(248,113,113,0.6);font-size:18px;cursor:pointer;" title="Удалить чат">🗑️</div>
+  </div>`).join('');
+}
+
+window.openChat=function(id,type,name,color){
+  curChat=id;curType=type;
+  document.getElementById('chatAv').style.background=color;
+  document.getElementById('chatAv').textContent=name[0].toUpperCase();
+  document.getElementById('chatName').textContent=name;
+  document.getElementById('grpSettBtn').style.display=type==='group'?'flex':'none';
+  document.getElementById('chatMsgs').innerHTML='';
+  document.getElementById('aiPanel').classList.remove('open');
+  if(type==='dm')db.ref('dms/'+id+'/unread/'+myNick).remove();
+  else db.ref('groups/'+id+'/unread/'+myNick).remove();
+  ss('chatScreen');loadMsgs(id,type);
+}
+
+function backToChats(){ss('chatsScreen');curChat=null;document.getElementById('aiPanel').classList.remove('open');}
+
+window.viewChatUserProfile=function(){
+  const name=document.getElementById('chatName').textContent;
+  if(curType==='dm'&&name&&name!==myNick)viewProfile(name);
+}
+
+const REACTIONS=['❤️','😂','😮','😢','🔥','👍'];
+function loadMsgs(chatId,type){
+  const path=type==='group'?'groups/'+chatId+'/messages':'dms/'+chatId+'/messages';
+  db.ref(path).orderByChild('ts').limitToLast(60).on('value',snap=>{
+    const el=document.getElementById('chatMsgs');
+    el.innerHTML='';
+    if(!snap.val())return;
+    const list=Object.values(snap.val()).sort((a,b)=>a.ts-b.ts);
+    let lastDate='',lastNick='';
+    list.forEach((m,idx)=>{
+      const d=new Date(m.ts).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+      if(d!==lastDate){el.innerHTML+=`<div class="msg-date">${d}</div>`;lastDate=d;lastNick='';}
+      const mine=m.nick===myNick;
+      const t=new Date(m.ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+      if(m.nick!==lastNick&&!mine)el.innerHTML+=`<div class="msg-sender" style="color:${gc(m.nick)};display:flex;align-items:center;gap:4px;">${m.nick}${isFounder(m.nick)?'<span style="font-size:10px;padding:1px 5px;border-radius:10px;background:rgba(255,215,0,0.2);border:1px solid rgba(255,215,0,0.5);color:#ffd700;font-weight:800;">👑</span>':''}</div>`;
+      lastNick=m.nick;
+      const reacts=m.reactions||{};
+      const reactSummary=REACTIONS.map(r=>{const cnt=reacts[r]?Object.keys(reacts[r]).length:0;return cnt>0?`<span class="reaction-btn ${reacts[r]&&reacts[r][myNick]?'reacted':''}" onclick="toggleReaction('${chatId}','${type}','${m.ts}_${m.nick.slice(0,8)}','${r}')">${r} ${cnt}</span>`:''}).join('');
+      let bubbleContent='';
+      if(m.voice){bubbleContent=`<div class="voice-bubble"><button class="play-voice-btn" onclick="playVoice('${m.voice}')">▶</button><div class="voice-wave"><span></span><span></span><span></span><span></span><span></span></div><span style="font-size:11px;color:rgba(255,255,255,0.4);">${m.duration||'0'}s</span></div>`;}
+      else{bubbleContent=`<div class="bubble">${(m.text||'').replace(/</g,'&lt;')}</div>`;}
+      el.innerHTML+=`<div class="msg-group ${mine?'mine':''}" style="animation-delay:${idx*0.03}s">
+        <div class="msg-row">
+          ${!mine?`<div class="msg-av" style="background:${gc(m.nick)}" onclick="viewProfile('${m.nick}')">${m.nick[0].toUpperCase()}</div>`:''}
+          <div style="position:relative;">
+            ${bubbleContent}
+            ${reactSummary?`<div class="reaction-bar">${reactSummary}</div>`:''}
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div class="msg-time">${t}</div>
+            <span style="font-size:16px;cursor:pointer;opacity:0.4;" onclick="showReactionPicker(this,'${chatId}','${type}','${m.ts}_${m.nick.slice(0,8)}')">😊</span>
+          </div>
+        </div>
+      </div>`;
+    });
+    el.scrollTop=el.scrollHeight;
+  });
+}
+
+window.showReactionPicker=function(btn,chatId,type,msgKey){
+  document.querySelectorAll('.reaction-picker').forEach(p=>p.remove());
+  const picker=document.createElement('div');
+  picker.className='reaction-picker';
+  picker.innerHTML=REACTIONS.map(r=>`<span class="reaction-emoji" onclick="toggleReaction('${chatId}','${type}','${msgKey}','${r}');this.closest('.reaction-picker').remove()">${r}</span>`).join('');
+  btn.parentNode.style.position='relative';
+  btn.parentNode.appendChild(picker);
+  setTimeout(()=>document.addEventListener('click',function h(e){if(!picker.contains(e.target)){picker.remove();document.removeEventListener('click',h);}},{once:true}),100);
+}
+
+window.toggleReaction=function(chatId,type,msgKey,emoji){
+  const path=type==='group'?'groups/'+chatId+'/messages':'dms/'+chatId+'/messages';
+  db.ref(path).orderByChild('ts').once('value').then(snap=>{
+    const entries=Object.entries(snap.val()||{});
+    const found=entries.find(([k,m])=>msgKey===m.ts+'_'+m.nick.slice(0,8));
+    if(!found)return;
+    const [msgId]=found;
+    const rRef=db.ref(path+'/'+msgId+'/reactions/'+emoji+'/'+myNick);
+    rRef.once('value').then(s=>{if(s.val())rRef.remove();else rRef.set(true);});
+  });
+}
+
+window.showBadge=function(tabs){
+  tabs.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&!el.querySelector('.nav-badge')){const b=document.createElement('div');b.className='nav-badge';el.appendChild(b);}
+  });
+}
+window.clearBadge=function(tabs){tabs.forEach(id=>{const el=document.getElementById(id);if(el)el.querySelectorAll('.nav-badge').forEach(b=>b.remove());});}
+
+window.startListeners=function(){
+  db.ref('posts').orderByChild('ts').limitToLast(1).on('child_added',snap=>{
+    if(snap.val()&&snap.val().nick!==myNick){showBadge(['nb2','nb6','nb10','nb14','nb18']);}
+  });
+  db.ref('dms').on('value',snap=>{
+    const dms=snap.val()||{};
+    let hasNew=false;
+    Object.entries(dms).forEach(([id,d])=>{
+      if(id.includes(myNick)&&d.unread&&d.unread[myNick])hasNew=true;
+    });
+    if(hasNew)showBadge(['nb1','nb5','nb9','nb13','nb17']);
+  });
+}
+
+window.sendMsg=function(){
+  const inp=document.getElementById('chatInp');
+  const text=inp.value.trim();
+  if(!text||!curChat)return;
+  inp.value='';inp.style.height='auto';
+  const path=curType==='group'?'groups/'+curChat+'/messages':'dms/'+curChat+'/messages';
+  db.ref(path).push({nick:myNick,text,ts:Date.now()});
+  db.ref(curType==='group'?'groups/'+curChat:'dms/'+curChat).update({lastMsg:text.substring(0,40),lastTs:Date.now()});
+  if(curType==='dm'){
+    const other=curChat.split('_').find(p=>p!==myNick);
+    if(other)db.ref('dms/'+curChat+'/unread/'+other).set(true);
+  }
+  playSendSound();
+}
+
+window.toggleVoice=async function(){
+  if(!isRecording){
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      mediaRecorder=new MediaRecorder(stream);
+      audioChunks=[];
+      mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
+      mediaRecorder.onstop=()=>{
+        const blob=new Blob(audioChunks,{type:'audio/webm'});
+        const reader=new FileReader();
+        reader.onload=()=>{
+          const b64=reader.result.split(',')[1];
+          const path=curType==='group'?'groups/'+curChat+'/messages':'dms/'+curChat+'/messages';
+          db.ref(path).push({nick:myNick,voice:b64,duration:Math.floor((Date.now()-voiceStart)/1000),ts:Date.now()});
+          db.ref(curType==='group'?'groups/'+curChat:'dms/'+curChat).update({lastMsg:'🎤 Голосовое сообщение',lastTs:Date.now()});
+          playSendSound();
+        };
+        reader.readAsDataURL(blob);
+        stream.getTracks().forEach(t=>t.stop());
+      };
+      var voiceStart=Date.now();
+      mediaRecorder.start();
+      isRecording=true;
+      document.getElementById('voiceBtn').classList.add('recording');
+      document.getElementById('voiceBtn').textContent='⏹';
+    }catch(e){alert('Нет доступа к микрофону');}
+  }else{
+    mediaRecorder&&mediaRecorder.stop();
+    isRecording=false;
+    document.getElementById('voiceBtn').classList.remove('recording');
+    document.getElementById('voiceBtn').textContent='🎤';
+  }
+}
+
+window.playVoice=function(b64){
+  try{const audio=new Audio('data:audio/webm;base64,'+b64);audio.play();}catch(e){}
+}
+
+// ===== NEW CHAT — FIXED: startDM is now defined =====
+window.openNewChat=function(){
+  openModal('✏️ Новый чат',`<div style="display:flex;flex-direction:column;gap:10px;">
+    <input class="inp" id="ncNick" placeholder="Никнейм для личного чата...">
+    <button class="btn" onclick="startDM()">💬 Личное сообщение</button>
+    <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;">
+      <input class="inp" id="ncGroup" placeholder="Название группы..." style="margin-bottom:8px;">
+      <button class="btn" onclick="createGroup()">👥 Создать группу</button>
+    </div>
+  </div>`);
+}
+
+// FIX: startDM was missing — now defined
+window.startDM=function(){
+  const raw=(document.getElementById('ncNick').value||'').trim();
+  if(!raw||raw.length<2){alert('Укажи никнейм (мин. 2 символа)');return;}
+  const nick=sn(raw);
+  if(nick===myNick){alert('Нельзя написать самому себе');return;}
+  db.ref('users/'+nick).once('value').then(snap=>{
+    if(!snap.val()){
+      alert('Пользователь "'+nick+'" не найден. Проверь никнейм.');
+      return;
+    }
+    const dmId=[myNick,nick].sort().join('_');
+    db.ref('dms/'+dmId).once('value').then(s=>{
+      if(!s.val()){
+        db.ref('dms/'+dmId).set({lastMsg:'',lastTs:Date.now()});
+      }
+      closeModal();
+      openChat(dmId,'dm',nick,gc(nick));
+    });
+  }).catch(()=>{
+    // User might not exist in users node but start DM anyway
+    const dmId=[myNick,nick].sort().join('_');
+    db.ref('dms/'+dmId).set({lastMsg:'',lastTs:Date.now()});
+    closeModal();
+    openChat(dmId,'dm',nick,gc(nick));
+  });
+}
+
+window.deleteChat=function(id,type){
+  if(!confirm('Удалить этот чат? Сообщения будут удалены только у тебя.'))return;
+  if(type==='dm'){
+    chats=chats.filter(c=>c.id!==id);
+    renderChats();
+    const hidden=JSON.parse(localStorage.getItem('hiddenChats')||'[]');
+    if(!hidden.includes(id)){hidden.push(id);localStorage.setItem('hiddenChats',JSON.stringify(hidden));}
+  } else {
+    db.ref('groups/'+id+'/members/'+myNick).remove();
+    chats=chats.filter(c=>c.id!==id);
+    renderChats();
+  }
+}
+
+// FIX: createGroup now works correctly
+window.createGroup=function(){
+  const n=(document.getElementById('ncGroup')||{value:''}).value.trim();
+  if(!n){alert('Укажи название группы');return;}
+  const id='g_'+Date.now();
+  db.ref('groups/'+id).set({name:n,color:gc(n),creator:myNick,members:{[myNick]:true},lastMsg:'',lastTs:Date.now()});
+  closeModal();
+  openChat(id,'group',n,gc(n));
+}
+
+// GROUP SETTINGS
+window.openGroupSettings=function(){
+  if(curType!=='group')return;
+  db.ref('groups/'+curChat).once('value').then(snap=>{
+    const g=snap.val();if(!g)return;
+    const members=Object.keys(g.members||{});
+    const isAdmin=g.creator===myNick||myNick===ADMIN;
+    openModal('⚙️ Настройки группы',`
+      <div style="font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:8px;">Участники (${members.length}):</div>
+      ${members.map(m=>`<div class="member-item">
+        <div style="width:34px;height:34px;border-radius:50%;background:${gc(m)};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;cursor:pointer;" onclick="viewProfile('${m}')">${m[0].toUpperCase()}</div>
+        <span style="flex:1;font-size:14px;cursor:pointer;" onclick="viewProfile('${m}')">${m}</span>
+        ${isAdmin&&m!==myNick?`<button class="remove-btn" onclick="kickMember('${m}')">Выгнать</button>`:''}
+      </div>`).join('')}
+      ${isAdmin?`<div class="add-wrap"><input class="inp" id="invInp" placeholder="Пригласить по нику..."><button class="small-btn" onclick="invMember()">+ Пригласить</button></div>`:''}
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+        <button onclick="leaveGroup()" style="width:100%;padding:11px;background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.2);border-radius:12px;color:#fbbf24;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;">🚪 Покинуть группу</button>
+        ${isAdmin?`<button onclick="deleteGroup()" style="width:100%;padding:11px;background:rgba(220,50,50,0.1);border:1px solid rgba(220,50,50,0.2);border-radius:12px;color:#f87171;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;">🗑️ Удалить группу</button>`:''}
+      </div>`);
+  });
+}
+window.kickMember=m=>{db.ref('groups/'+curChat+'/members/'+m).remove();openGroupSettings();}
+window.invMember=()=>{const n=sn((document.getElementById('invInp').value||'').trim());if(!n)return;db.ref('groups/'+curChat+'/members/'+n).set(true);openGroupSettings();}
+window.leaveGroup=()=>{if(!confirm('Покинуть?'))return;db.ref('groups/'+curChat+'/members/'+myNick).remove();closeModal();backToChats();}
+window.deleteGroup=()=>{if(!confirm('Удалить группу навсегда?'))return;db.ref('groups/'+curChat).remove();closeModal();backToChats();}
+
+// ===== POSTS =====
+function loadPosts(){
+  db.ref('posts').orderByChild('ts').limitToLast(30).on('value',snap=>{
+    const el=document.getElementById('postsList');
+    const posts=snap.val()||{};
+    const list=Object.entries(posts).map(([id,p])=>({...p,id})).sort((a,b)=>b.ts-a.ts);
+    if(!list.length){el.innerHTML='<div class="empty"><div>📰</div><div>Постов пока нет</div></div>';return;}
+    el.innerHTML=list.map(p=>{
+      const t=new Date(p.ts).toLocaleDateString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      const likes=p.likes?Object.keys(p.likes).length:0;
+      const liked=p.likes&&p.likes[myNick];
+      const comments=p.comments?Object.values(p.comments):[];
+      const views=p.views?Object.keys(p.views).length:0;
+      const canDel=p.nick===myNick||myNick===ADMIN;
+      if(p.nick!==myNick)db.ref('posts/'+p.id+'/views/'+myNick).set(true);
+      // FIX: toggleCmts now receives just p.id (not 'c_'+p.id)
+      const pSub=p.sub&&p.sub.until>Date.now()?p.sub:null;
+      const pGlowCls=isFounder(p.nick)?'founder-glow':pSub?getSubGlowClass(pSub):'';
+      return `<div class="post-card">
+        ${isFounder(p.nick)?`<div class="founder-post-banner">👑 Основатель и Администратор FitChat</div>`:''}
+        <div class="post-header">
+          <div class="av ${pGlowCls}" style="background:${gc(p.nick)};width:38px;height:38px;font-size:15px;cursor:pointer;" onclick="viewProfile('${p.nick}')">${p.nick[0].toUpperCase()}</div>
+          <div style="flex:1;"><div class="post-nick" style="display:flex;align-items:center;gap:5px;" onclick="viewProfile('${p.nick}')">${p.nick}${isFounder(p.nick)?founderBadgeHtml():pSub?`<span style="font-size:12px;">${pSub.badge}</span>`:''}</div><div class="post-time-sm">${t}</div></div>
+          ${canDel?`<span style="cursor:pointer;color:rgba(255,255,255,0.2);" onclick="delPost('${p.id}')">🗑️</span>`:''}
+        </div>
+        <div class="post-text">${(p.text||'').replace(/</g,'&lt;')}</div>
+        <div class="post-actions">
+          <span class="post-action ${liked?'liked':''}" onclick="toggleLike('${p.id}')">❤️ ${likes}</span>
+          <span class="post-action" onclick="toggleCmts('${p.id}')">💬 ${comments.length}</span>
+          <span style="font-size:13px;color:rgba(255,255,255,0.3);">👁️ ${views}</span>
+        </div>
+        <div id="c_${p.id}" style="display:none;" class="post-comments">
+          ${comments.map(c=>`<div class="comment"><div class="comment-av" style="background:${gc(c.nick)}">${c.nick[0].toUpperCase()}</div><div class="comment-bubble"><div class="comment-nick">${c.nick}</div>${(c.text||'').replace(/</g,'&lt;')}</div></div>`).join('')}
+          <div class="comment-inp-row"><input class="comment-inp" id="ci_${p.id}" placeholder="Комментарий..." onkeydown="if(event.key==='Enter')addCmt('${p.id}')"><button class="small-send" onclick="addCmt('${p.id}')">➤</button></div>
+        </div>
+      </div>`;
+    }).join('');
+  });
+}
+
+window.toggleLike=id=>{const r=db.ref('posts/'+id+'/likes/'+myNick);r.once('value').then(s=>{if(s.val())r.remove();else r.set(true);});}
+
+// FIX: toggleCmts now uses just the id (without c_ prefix), matches div id="c_${p.id}"
+window.toggleCmts=id=>{
+  const el=document.getElementById('c_'+id);
+  if(el){
+    const visible=el.style.display!=='none'&&el.style.display!=='';
+    el.style.display=visible?'none':'block';
+    if(!visible){
+      const inp=document.getElementById('ci_'+id);
+      if(inp)setTimeout(()=>inp.focus(),100);
+    }
+  }
+}
+
+// FIX: addCmt now properly handles errors and updates comments
+window.addCmt=function(pid){
+  const inp=document.getElementById('ci_'+pid);
+  if(!inp)return;
+  const t=inp.value.trim();
+  if(!t||!myNick)return;
+  const origVal=inp.value;
+  inp.value='';inp.disabled=true;
+  db.ref('posts/'+pid+'/comments').push({nick:myNick,text:t,ts:Date.now()}).then(()=>{
+    inp.disabled=false;
+    db.ref('posts/'+pid+'/comments').once('value').then(cs=>{
+      const cbox=document.getElementById('c_'+pid);
+      if(!cbox)return;
+      const comments=cs.val()?Object.values(cs.val()).sort((a,b)=>a.ts-b.ts):[];
+      const cmtHtml=comments.map(c=>`<div class="comment"><div class="comment-av" style="background:${gc(c.nick)}">${c.nick[0].toUpperCase()}</div><div class="comment-bubble"><div class="comment-nick">${c.nick}</div>${(c.text||'').replace(/</g,'&lt;')}</div></div>`).join('');
+      Array.from(cbox.children).forEach(ch=>{if(!ch.classList.contains('comment-inp-row'))ch.remove();});
+      cbox.insertAdjacentHTML('afterbegin',cmtHtml);
+    });
+  }).catch(e=>{inp.disabled=false;inp.value=origVal;alert('Не удалось отправить комментарий: '+e.message);});
+}
+window.delPost=id=>{if(!confirm('Удалить?'))return;db.ref('posts/'+id).remove();}
+
+window.openNewPost=()=>{
+  openModal('✏️ Новый пост',`<textarea class="inp" id="npt" placeholder="Что у тебя нового?" rows="4" style="resize:none;"></textarea><div id="perr" style="font-size:12px;color:#f87171;min-height:16px;margin-top:6px;"></div><button class="btn" style="margin-top:10px;" onclick="pubPost()">Опубликовать 🚀</button>`);
+}
+window.pubPost=()=>{
+  const t=(document.getElementById('npt').value||'').trim();
+  if(!t){document.getElementById('perr').textContent='Напиши что-нибудь';return;}
+  db.ref('posts').push({nick:myNick,text:t,ts:Date.now()});
+  db.ref('users/'+myNick+'/stars').once('value').then(s=>{db.ref('users/'+myNick+'/stars').set((s.val()||0)+5);});
+  closeModal();
+  setTimeout(()=>alert('✦ +5 звёзд за публикацию!'),300);
+}
+
+// PROFILE
+function getAchs(u){
+  const r=u.rating||50,stars=u.stars||0,join=u.joinDate||Date.now();
+  const days=Math.floor((Date.now()-join)/86400000);
+  const cl=u.claimedAchs||{};
+  return [
+    {id:'first',icon:'🌅',name:'Первый день',desc:'Зарегистрировался',reward:5,ok:true,claim:!cl.first},
+    {id:'week',icon:'✨',name:'Неделя',desc:'7 дней в FitChat',reward:5,ok:days>=7,claim:!cl.week&&days>=7},
+    {id:'month',icon:'🏅',name:'Месяц',desc:'30 дней в FitChat',reward:10,ok:days>=30,claim:!cl.month&&days>=30},
+    {id:'veteran',icon:'🎖️',name:'Ветеран',desc:'50 дней в FitChat',reward:12,ok:days>=50,claim:!cl.veteran&&days>=50},
+    {id:'elder',icon:'🧙',name:'Старожил',desc:'100 дней в FitChat',reward:20,ok:days>=100,claim:!cl.elder&&days>=100},
+    {id:'popular',icon:'🔥',name:'Популярный',desc:'Рейтинг 80%+',reward:8,ok:r>=80,claim:!cl.popular&&r>=80},
+    {id:'perfect',icon:'💎',name:'Идеальный',desc:'Рейтинг 100%',reward:15,ok:r===100,claim:!cl.perfect&&r===100},
+    {id:'best',icon:'👑',name:'Лучший пользователь!',desc:'100 дней без жалоб с 100% рейтингом',reward:30,ok:days>=100&&r===100,claim:!cl.best&&days>=100&&r===100},
+    {id:'star50',icon:'⭐',name:'Коллектор',desc:'50 звёзд',reward:10,ok:stars>=50,claim:!cl.star50&&stars>=50},
+    {id:'star100',icon:'💰',name:'Накопитель',desc:'100 звёзд',reward:20,ok:stars>=100,claim:!cl.star100&&stars>=100},
+    {id:'social',icon:'🤝',name:'Общительный',desc:'Заполнил профиль',reward:3,ok:!!(u.bio&&u.bio.length>3),claim:!cl.social&&!!(u.bio&&u.bio.length>3)},
+    {id:'worst',icon:'💀',name:'Худший пользователь!',desc:'Рейтинг упал ниже 10%',reward:0,ok:r<10,claim:false},
+  ];
+}
+
+window.claimAch=function(id){
+  db.ref('users/'+myNick).once('value').then(s=>{
+    const u=s.val()||{};
+    const ach=getAchs(u).find(a=>a.id===id);
+    if(!ach||!ach.ok||!ach.claim)return;
+    db.ref('users/'+myNick+'/stars').set((u.stars||0)+ach.reward);
+    db.ref('users/'+myNick+'/claimedAchs/'+id).set(true);
+    if(id==='best')db.ref('users/'+myNick+'/title').set('Лучший пользователь!');
+    alert('🎁 +'+ach.reward+' ✦ звёзд!');
+    renderProfile();
+  });
+}
+
+window.reportUser=function(target){
+  if(target===myNick)return;
+  if(isFounder(target)){alert('Нельзя подавать жалобы на Основателя FitChat.');return;}
+  db.ref('users/'+target).once('value').then(usnap=>{
+    const tu=usnap.val()||{};
+    // Shield check: if user has shield, consume it and block this report
+    if(tu.shield){
+      const sc=typeof tu.shieldCount==='number'?tu.shieldCount:1;
+      if(sc>1){
+        db.ref('users/'+target).update({shieldCount:sc-1});
+        alert('🛡️ Жалоба заблокирована щитом пользователя (ещё осталось: '+(sc-1)+').');
+      }else{
+        db.ref('users/'+target).update({shield:false,shieldCount:0});
+        alert('🛡️ Жалоба поглощена щитом. Щит исчерпан.');
+      }
+      return;
+    }
+    db.ref('reports/'+target+'/'+myNick).once('value').then(s=>{
+      if(s.val()){alert('Ты уже жаловался.');return;}
+      db.ref('reports/'+target+'/'+myNick).set({ts:Date.now()});
+      Promise.all([db.ref('users').once('value'),db.ref('reports/'+target).once('value')]).then(([us,rs])=>{
+        const total=Math.max(Object.keys(us.val()||{}).length,1);
+        const count=Object.keys(rs.val()||{}).length;
+        const newR=Math.max(0,Math.round(100-(count/total)*100));
+        db.ref('users/'+target+'/rating').set(newR);
+        if(newR<=25)db.ref('users/'+target+'/riskWarning').set(true);
+        if(count/total>0.5){db.ref('users/'+target+'/banned').set(true);db.ref('users/'+target+'/title').set('Худший пользователь!');}
+      });
+      alert('Жалоба отправлена!');closeModal();
+    });
+  });
+}
+
+window.praiseUser=function(target){
+  if(target===myNick)return;
+  const key='praise_'+target+'_'+myNick+'_'+tdk();
+  const stored=localStorage.getItem(key);
+  if(stored){alert('Ты уже хвалил сегодня!');return;}
+  db.ref('users/'+target+'/rating').once('value').then(s=>{
+    const cur=s.val()!=null?s.val():50;
+    db.ref('users/'+target+'/rating').set(Math.min(100,cur+5));
+    localStorage.setItem(key,'1');
+    alert('👍 Рейтинг повышен!');closeModal();
+  });
+}
+
+window.viewProfile=function(nick){
+  if(nick===myNick)return;
+  db.ref('users/'+nick).once('value').then(snap=>{
+    const u=snap.val()||{nick};
+    const r=u.rating!=null?u.rating:50;
+    const rc=r>=50?'#4ade80':r>=25?'#fbbf24':'#f87171';
+    const vSub=u.subscription&&u.subscription.until>Date.now()?u.subscription:null;
+    const vGlowCls=isFounder(nick)?'founder-glow':vSub?getSubGlowClass(vSub):'';
+    openModal('👤 '+nick,`<div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+      ${isFounder(nick)?`<div class="founder-profile-card" style="width:100%;margin-bottom:4px;">
+        <div style="font-size:28px;filter:drop-shadow(0 0 8px rgba(255,215,0,0.6))">👑</div>
+        <div style="font-size:16px;font-weight:800;background:linear-gradient(135deg,#ffd700,#ff8800);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Основатель FitChat</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);">Создатель и администратор мессенджера</div>
+      </div>`:''}
+      <div style="width:64px;height:64px;border-radius:50%;background:${gc(nick)};display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:white;" class="${vGlowCls}">${nick[0].toUpperCase()}</div>
+      <div style="text-align:center;"><div style="font-size:18px;font-weight:700;display:flex;align-items:center;gap:6px;justify-content:center;">${nick}${isFounder(nick)?founderBadgeHtml():vSub?`<span>${vSub.badge}</span>`:''}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.4);margin-top:4px;">${u.bio||'Нет описания'}</div>
+      ${u.title?`<div class="title-badge ${u.title.includes('Лучший')?'best':u.title.includes('Худший')?'worst':''}" style="margin-top:6px;">${u.title}</div>`:''}</div>
+      <div style="width:100%;"><div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:4px;"><span>⭐ Рейтинг</span><span>${r}%</span></div>
+      <div class="rating-bar"><div class="rating-fill" style="width:${r}%;background:${rc};"></div></div></div>
+      <div style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.2);border-radius:12px;">
+        <span class="star-anim" style="font-size:18px;">✦</span><span style="font-size:15px;font-weight:700;color:#ffd700;">${u.stars||0}</span><span style="font-size:12px;color:rgba(255,255,255,0.4);">звёзд</span>
+        ${vSub?`<span style="margin-left:auto;font-size:14px;">${vSub.badge}</span>`:''}
+      </div>
+      <button class="dm-btn" onclick="closeModal();openChat([myNick,'${nick}'].sort().join('_'),'dm','${nick}','${gc(nick)}')">💬 Написать</button>
+      <button class="praise-btn" onclick="praiseUser('${nick}')">👍 Похвалить (+5 рейтинга)</button>
+      ${!isFounder(nick)?`<button class="report-btn" onclick="reportUser('${nick}')">🚩 Пожаловаться</button>`:''}
+    </div>`);
+  });
+}
+
+function renderProfile(){
+  db.ref('users/'+myNick).once('value').then(snap=>{
+    const u=snap.val()||{};
+    const rating=u.rating!=null?u.rating:50;
+    const stars=u.stars||0;
+    const title=u.title||'';
+    const rc=rating>=50?'#4ade80':rating>=25?'#fbbf24':'#f87171';
+    const achs=getAchs(u);
+    const unlocked=achs.filter(a=>a.ok);
+    const th=localStorage.getItem('fct')||'default';
+    const tc=themeColors[th]||themeColors.default;
+    const sub=u.subscription;
+    document.getElementById('profileWrap').innerHTML=`
+      ${isFounder(myNick)?`<div class="founder-profile-card">
+        <div style="font-size:36px;filter:drop-shadow(0 0 12px rgba(255,215,0,0.7));">👑</div>
+        <div style="font-size:17px;font-weight:900;background:linear-gradient(135deg,#ffd700,#ff8800);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:0.5px;">Основатель FitChat</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.35);">Создатель и администратор мессенджера · Midov_Gisa</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px;">
+          <span style="padding:2px 10px;border-radius:20px;font-size:11px;background:rgba(255,215,0,0.15);border:1px solid rgba(255,215,0,0.4);color:#ffd700;">👑 Основатель</span>
+          <span style="padding:2px 10px;border-radius:20px;font-size:11px;background:rgba(255,0,85,0.12);border:1px solid rgba(255,0,85,0.3);color:#ff6b9d;">⚡ Администратор</span>
+          <span style="padding:2px 10px;border-radius:20px;font-size:11px;background:rgba(0,187,255,0.12);border:1px solid rgba(0,187,255,0.3);color:#00bbff;">🛡️ Защищён</span>
+        </div>
+      </div>`:''}
+      <div class="profile-card">
+        <div class="profile-av-wrap">
+          <div class="profile-av-glow" style="background:${isFounder(myNick)?'conic-gradient(from 0deg,#ffd700,#ff8800,#ffd700)':sub&&sub.until>Date.now()?'conic-gradient(from 0deg,'+tc.g1+','+tc.g2+','+tc.g1+')':'conic-gradient(from 0deg,'+tc.g1+','+tc.g2+','+tc.g1+')'}"></div>
+          <div class="profile-av ${isFounder(myNick)?'founder-glow':sub&&sub.until>Date.now()?getSubGlowClass(sub):''}" style="background:${gc(myNick)}">${myNick[0].toUpperCase()}</div>
+        </div>
+        <div class="profile-name" style="display:flex;align-items:center;gap:6px;justify-content:center;">${myNick}${isFounder(myNick)?founderBadgeHtml():sub&&sub.until>Date.now()?`<span>${sub.badge}</span>`:''}</div>
+        ${title?`<div class="title-badge ${title.includes('Лучший')?'best':title.includes('Худший')?'worst':''}" style="margin-top:4px;">${title}</div>`:''}
+        <div class="profile-bio">${u.bio||'Нет описания'}</div>
+        ${sub&&sub.until>Date.now()?`<div style="padding:8px 14px;background:rgba(155,0,255,0.1);border:1px solid rgba(155,0,255,0.3);border-radius:12px;font-size:12px;color:#d87bff;width:100%;text-align:center;">${sub.badge} Подписка активна до ${new Date(sub.until).toLocaleDateString('ru-RU')}</div>`:''}
+        <div class="stars-bar"><span class="star-anim" style="font-size:20px;">✦</span><span style="font-size:16px;font-weight:700;color:#ffd700;">${stars}</span><span style="font-size:12px;color:rgba(255,255,255,0.4);">Полярных звёзд</span></div>
+        <div style="width:100%;"><div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:4px;"><span>⭐ Рейтинг</span><span>${rating}%</span></div>
+        <div class="rating-bar"><div class="rating-fill" style="width:${rating}%;background:${rc};"></div></div>
+        ${rating<=25?'<div style="font-size:11px;color:#f87171;margin-top:4px;">⚠️ Низкий рейтинг — риск бана!</div>':''}</div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title">🏆 Достижения (${unlocked.length}/${achs.length})</div>
+        ${achs.map(a=>`<div class="ach-item ${a.ok?'unlocked':'locked'}">
+          <span style="font-size:26px;width:40px;text-align:center;">${a.icon}</span>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${a.name}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.35);">${a.desc}</div>
+          <div style="font-size:11px;color:#ffd700;">✦ +${a.reward}</div></div>
+          ${a.ok&&a.claim?`<button class="gift-btn" onclick="claimAch('${a.id}')">🎁</button>`:''}
+          ${a.ok&&!a.claim?'<span style="font-size:18px;">✅</span>':''}
+        </div>`).join('')}
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title">✏️ Редактировать профиль</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input class="inp" id="eNick" value="${myNick}" placeholder="Никнейм...">
+          <input class="inp" id="eBio" value="${u.bio||''}" placeholder="О себе...">
+          <input class="inp" id="eStatus" value="${u.status||''}" placeholder="Статус...">
+          <button class="btn" onclick="saveProfile()">Сохранить ✅</button>
+        </div>
+      </div>
+      <div class="profile-section">
+        <div class="profile-section-title">🎨 Тема</div>
+        ${(()=>{
+          const cur=localStorage.getItem('fct')||'default';
+          const hasYearSub=isFounder(myNick)||(sub&&sub.until>Date.now()&&sub.planId==='year');
+          const themes=[
+            {id:'default',name:'Фиолетовый',grad:'#9b00ff,#ff0055',locked:false},
+            {id:'ocean',name:'Океан',grad:'#0088ff,#00ccff',locked:false},
+            {id:'forest',name:'Лес',grad:'#00cc88,#00ff55',locked:false},
+            {id:'sunset',name:'Закат',grad:'#ff8800,#ff0055',locked:false},
+            {id:'royal',name:'Королевский 👑',grad:'#ffd700,#ff8800',locked:!hasYearSub},
+          ];
+          return themes.map(th2=>`<div class="theme-opt ${cur===th2.id?'selected':''}" onclick="${th2.locked?'alert(\'Тема доступна только для подписчиков VIP (год)\')':'setTheme(\''+th2.id+'\',this)'}">
+            <div class="theme-preview" style="background:linear-gradient(135deg,${th2.grad});position:relative;">${th2.locked?'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(0,0,0,0.4);border-radius:8px;">🔒</div>':''}</div>
+            <div style="font-size:13px;font-weight:600;${th2.locked?'color:rgba(255,255,255,0.35)':''}">${th2.name}</div>
+          </div>`).join('');
+        })()}
+      </div>
+      ${myNick===ADMIN?`<div class="profile-section" style="border-color:rgba(255,0,85,0.2);">
+        <div class="profile-section-title" style="color:#ff6b9d;">👑 Администратор</div>
+        <div class="profile-row" onclick="adminPanel()">
+          <div class="profile-row-icon" style="background:rgba(255,0,85,0.1);">⚡</div>
+          <div><div class="profile-row-text">Панель управления</div><div class="profile-row-sub">Пользователи и посты</div></div>
+        </div>
+        <div class="profile-row" onclick="adminSelfStars()">
+          <div class="profile-row-icon" style="background:rgba(255,215,0,0.1);">✦</div>
+          <div><div class="profile-row-text">Добавить себе звёзды</div><div class="profile-row-sub">Только для администратора</div></div>
+        </div>
+      </div>
+      <div class="profile-section" style="border-color:rgba(255,215,0,0.25);">
+        <div class="profile-section-title" style="color:#ffd700;">💳 Выдать подписку</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input class="inp" id="pSubNick" placeholder="Никнейм получателя...">
+          <div style="display:flex;gap:8px;">
+            <button onclick="quickSub('month')" style="flex:1;padding:10px 4px;background:linear-gradient(135deg,rgba(155,0,255,0.3),rgba(155,0,255,0.1));border:1px solid rgba(155,0,255,0.4);border-radius:12px;color:white;font-size:12px;font-weight:700;cursor:pointer;">✨<br><span style="font-size:10px;opacity:0.7;">1 мес</span></button>
+            <button onclick="quickSub('quarter')" style="flex:1;padding:10px 4px;background:linear-gradient(135deg,rgba(234,179,8,0.3),rgba(234,179,8,0.1));border:1px solid rgba(234,179,8,0.4);border-radius:12px;color:white;font-size:12px;font-weight:700;cursor:pointer;">💫<br><span style="font-size:10px;opacity:0.7;">3 мес</span></button>
+            <button onclick="quickSub('year')" style="flex:1;padding:10px 4px;background:linear-gradient(135deg,rgba(255,215,0,0.3),rgba(255,140,0,0.15));border:1px solid rgba(255,215,0,0.5);border-radius:12px;color:#ffd700;font-size:12px;font-weight:700;cursor:pointer;">👑<br><span style="font-size:10px;opacity:0.7;">1 год</span></button>
+          </div>
+          <div id="pSubResult" style="font-size:12px;color:rgba(255,255,255,0.4);text-align:center;min-height:16px;"></div>
+        </div>
+      </div>`:''}
+      <div class="profile-section">
+        <div class="profile-row" onclick="logout()">
+          <div class="profile-row-icon" style="background:rgba(220,50,50,0.1);">🚪</div>
+          <div class="profile-row-text" style="color:#f87171;">Выйти</div>
+        </div>
+      </div>`;
+  });
+}
+
+window.saveProfile=()=>{
+  const nick=sn((document.getElementById('eNick').value||myNick));
+  const bio=(document.getElementById('eBio').value||'').trim();
+  const status=(document.getElementById('eStatus').value||'').trim();
+  if(!nick||nick.length<2)return;
+  myNick=nick;myBio=bio;
+  localStorage.setItem('fn',nick);localStorage.setItem('fb',bio);
+  db.ref('users/'+nick).update({nick,bio,status});
+  renderProfile();
+}
+
+// ===== ADMIN PANEL — opens immediately, loads data async =====
+window.adminPanel=()=>{
+  if(myNick!==ADMIN){alert('Нет доступа');return;}
+  // Open modal right away — no waiting for Firebase
+  openModal('👑 Администратор',`
+    <div style="margin-bottom:10px;padding:8px 12px;background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.2);border-radius:12px;font-size:12px;color:#ffd700;">👑 Midov_Gisa — Основатель FitChat</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:10px;">Список пользователей:</div>
+    <div id="aUsers"><div style="color:rgba(255,255,255,0.3);font-size:12px;text-align:center;padding:16px;">⏳ Загрузка...</div></div>
+    <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;">
+      <div style="font-size:13px;color:rgba(255,215,0,0.8);margin-bottom:8px;font-weight:700;">💳 Выдать подписку</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <input class="inp" id="aSubNick" placeholder="Никнейм пользователя...">
+        <select id="aSubPlan" style="padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:14px;font-family:Inter,sans-serif;outline:none;">
+          <option value="month">✨ 1 месяц (+50✦)</option>
+          <option value="quarter">💫 3 месяца (+150✦)</option>
+          <option value="year">👑 1 год (+300✦)</option>
+        </select>
+        <button onclick="adminActivateSub()" style="padding:11px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:12px;color:#000;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;">✅ Активировать</button>
+        <div id="aSubResult" style="font-size:12px;min-height:16px;text-align:center;"></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;">
+      <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:8px;">Последние посты:</div>
+      <div id="aPosts"><div style="color:rgba(255,255,255,0.3);font-size:12px;text-align:center;padding:8px;">⏳ Загрузка...</div></div>
+    </div>`);
+  // Load users async after modal is shown
+  db.ref('users').once('value').then(us=>{
+    const el=document.getElementById('aUsers');
+    if(!el)return;
+    const users=Object.values(us.val()||{});
+    if(!users.length){el.innerHTML='<div style="color:rgba(255,255,255,0.3);font-size:12px;">Пользователей нет</div>';return;}
+    el.innerHTML=users.map(u=>`<div class="member-item">
+      <div style="width:32px;height:32px;border-radius:50%;background:${gc(u.nick||'?')};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;cursor:pointer;flex-shrink:0;" onclick="adminViewUser('${(u.nick||'').replace(/'/g,'\\x27')}')">${(u.nick||'?')[0].toUpperCase()}</div>
+      <div style="flex:1;min-width:0;cursor:pointer;" onclick="adminViewUser('${(u.nick||'').replace(/'/g,'\\x27')}')">
+        <div style="font-size:13px;font-weight:600;">${u.nick||'?'}${u.banned?' 🚫':''}${u.subscription&&u.subscription.until>Date.now()?' '+u.subscription.badge:''}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.3);">⭐${u.rating!=null?u.rating:50}% · ✦${u.stars||0}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">
+        <div style="display:flex;gap:3px;">
+          <button style="padding:3px 6px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:6px;color:#4ade80;font-size:10px;cursor:pointer;" onclick="chgRating('${u.nick}',10)">+⭐</button>
+          <button style="padding:3px 6px;background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);border-radius:6px;color:#f87171;font-size:10px;cursor:pointer;" onclick="chgRating('${u.nick}',-10)">-⭐</button>
+          <button style="padding:3px 6px;background:rgba(255,215,0,0.12);border:1px solid rgba(255,215,0,0.3);border-radius:6px;color:#ffd700;font-size:10px;cursor:pointer;" onclick="giveStars('${u.nick}')">+✦</button>
+        </div>
+        ${u.nick!==ADMIN?(!u.banned?`<button class="remove-btn" style="font-size:10px;padding:3px 6px;" onclick="banUser('${u.nick}')">Бан</button>`:`<button class="remove-btn" style="font-size:10px;padding:3px 6px;color:#4ade80;border-color:rgba(74,222,128,0.3);" onclick="unbanUser('${u.nick}')">Разбан</button>`):'<div style="font-size:10px;color:rgba(255,215,0,0.5);padding:2px 4px;">Основатель</div>'}
+      </div>
+    </div>`).join('');
+  }).catch(()=>{
+    const el=document.getElementById('aUsers');
+    if(el)el.innerHTML='<div style="color:#f87171;font-size:12px;">Нет доступа к списку. Проверь правила Firebase.</div>';
+  });
+  // Load posts async
+  db.ref('posts').orderByChild('ts').limitToLast(15).once('value').then(s=>{
+    const el=document.getElementById('aPosts');
+    if(!el)return;
+    const postsData=s.val()||{};
+    if(!Object.keys(postsData).length){el.innerHTML='<div style="color:rgba(255,255,255,0.3);font-size:12px;">Постов нет</div>';return;}
+    el.innerHTML=Object.entries(postsData).reverse().map(([id,p])=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:7px;background:rgba(255,255,255,0.02);border-radius:10px;margin-bottom:5px;">
+        <div style="flex:1;min-width:0;"><div style="font-size:11px;color:#d87bff;">${p.nick}</div><div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(p.text||'').replace(/</g,'&lt;').substring(0,50)}</div></div>
+        <button class="remove-btn" style="font-size:11px;" onclick="db.ref('posts/${id}').remove();adminPanel()">🗑️</button>
+      </div>`).join('');
+  }).catch(()=>{
+    const el=document.getElementById('aPosts');
+    if(el)el.innerHTML='<div style="color:#f87171;font-size:12px;">Нет доступа к постам</div>';
+  });
+}
+
+// Admin: give stars to self
+window.adminSelfStars=()=>{
+  if(myNick!==ADMIN)return;
+  const n=parseInt(prompt('Сколько ✦ добавить себе?'));
+  if(isNaN(n)||n<=0){alert('Введи положительное число');return;}
+  db.ref('users/'+myNick+'/stars').once('value').then(s=>{
+    const newVal=(s.val()||0)+n;
+    db.ref('users/'+myNick+'/stars').set(newVal);
+    alert('✦ +'+n+' звёзд добавлено! Теперь у тебя: '+newVal+' ✦');
+    renderProfile();
+  });
+}
+
+window.adminViewUser=nick=>{
+  closeModal();
+  db.ref('users/'+nick).once('value').then(snap=>{
+    const u=snap.val()||{nick};
+    const r=u.rating!=null?u.rating:50;
+    const rc=r>=50?'#4ade80':r>=25?'#fbbf24':'#f87171';
+    openModal('👤 '+nick+' (Адм.)',`<div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+      <div style="width:64px;height:64px;border-radius:50%;background:${gc(nick)};display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:white;">${nick[0].toUpperCase()}</div>
+      <div style="text-align:center;"><div style="font-size:18px;font-weight:700;">${nick}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.4);">${u.bio||'Нет описания'}</div></div>
+      <div style="width:100%;"><div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:4px;"><span>Рейтинг</span><span>${r}%</span></div>
+      <div class="rating-bar"><div class="rating-fill" style="width:${r}%;background:${rc};"></div></div></div>
+      <div style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.2);border-radius:12px;">
+        <span class="star-anim">✦</span><span style="font-size:15px;font-weight:700;color:#ffd700;">${u.stars||0}</span>
+      </div>
+      <button class="dm-btn" onclick="closeModal();openChat([myNick,'${nick}'].sort().join('_'),'dm','${nick}','${gc(nick)}')">💬 Написать</button>
+    </div>`);
+  });
+}
+
+window.giveStars=nick=>{
+  const n=parseInt(prompt('Сколько ✦ дать/забрать (отрицательное — отнять)?'));
+  if(isNaN(n))return;
+  db.ref('users/'+nick+'/stars').once('value').then(s=>{
+    db.ref('users/'+nick+'/stars').set(Math.max(0,(s.val()||0)+n));
+    alert('✦ Выдано '+n+' звёзд игроку '+nick);
+    adminPanel();
+  });
+}
+
+window.giveAch=nick=>{
+  const achList=['first','week','month','veteran','elder','popular','perfect','best','star50','star100','social'];
+  const id=prompt('ID достижения:\n'+achList.join(', '));
+  if(!id||!achList.includes(id))return;
+  db.ref('users/'+nick+'/claimedAchs/'+id).set(true);
+  alert('Достижение выдано!');adminPanel();
+}
+
+window.banUser=nick=>{db.ref('users/'+nick).update({banned:true});adminPanel();}
+window.unbanUser=nick=>{db.ref('users/'+nick).update({banned:false,rating:50});adminPanel();}
+window.chgRating=(nick,d)=>{db.ref('users/'+nick+'/rating').once('value').then(s=>{const r=Math.max(0,Math.min(100,(s.val()||50)+d));db.ref('users/'+nick+'/rating').set(r);adminPanel();});}
+
+// ===== GAME =====
+const GAME_EMOJIS=['🐶','🐱','🦊','🐸','🌸','⚡','🎯','🍕'];
+let curGame='memory';
+
+function renderGame(){
+  const wrap=document.getElementById('gameWrap');
+  db.ref('users/'+myNick+'/stars').once('value').then(s=>{
+    const myS=s.val()||0;
+    wrap.innerHTML=`
+      <div style="display:flex;gap:8px;width:100%;max-width:340px;">
+        <button onclick="switchGame('memory',this)" style="flex:1;padding:9px;background:${curGame==='memory'?'linear-gradient(135deg,#9b00ff,#ff0055)':'rgba(255,255,255,0.07)'};border:none;border-radius:12px;color:white;font-size:12px;font-weight:600;cursor:pointer;">🧠 Пары</button>
+        <button onclick="switchGame('reaction',this)" style="flex:1;padding:9px;background:${curGame==='reaction'?'linear-gradient(135deg,#9b00ff,#ff0055)':'rgba(255,255,255,0.07)'};border:none;border-radius:12px;color:white;font-size:12px;font-weight:600;cursor:pointer;">⚡ Реакция</button>
+        <button onclick="switchGame('math',this)" style="flex:1;padding:9px;background:${curGame==='math'?'linear-gradient(135deg,#9b00ff,#ff0055)':'rgba(255,255,255,0.07)'};border:none;border-radius:12px;color:white;font-size:12px;font-weight:600;cursor:pointer;">🧮 Счёт</button>
+      </div>
+      <div id="gameContent" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;"></div>
+      <div class="game-card" style="width:100%;max-width:340px;border-color:rgba(255,215,0,0.3);">
+        <div style="font-size:16px;font-weight:700;font-family:'Space Grotesk',sans-serif;">🏪 Рынок звёзд</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.45);text-align:center;">Твой баланс: <b style="color:#ffd700;">${myS} ✦</b></div>
+        <div style="width:100%;display:flex;flex-direction:column;gap:8px;" id="marketItems">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.08);">
+            <div><div style="font-size:13px;font-weight:600;">🔰 Значок "Активный"</div><div style="font-size:11px;color:rgba(255,255,255,0.35);">Виден в профиле и чатах</div></div>
+            <button onclick="buyItem('badge_active',5,${myS})" style="padding:6px 12px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:10px;color:#000;font-size:12px;font-weight:700;cursor:pointer;">5 ✦</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.08);">
+            <div><div style="font-size:13px;font-weight:600;">⭐ Усилить рейтинг</div><div style="font-size:11px;color:rgba(255,255,255,0.35);">+10% к рейтингу</div></div>
+            <button onclick="buyItem('rating',15,${myS})" style="padding:6px 12px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:10px;color:#000;font-size:12px;font-weight:700;cursor:pointer;">15 ✦</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.08);">
+            <div><div style="font-size:13px;font-weight:600;">🛡️ Щит репутации</div><div style="font-size:11px;color:rgba(255,255,255,0.35);">Защита от следующей жалобы</div></div>
+            <button onclick="buyItem('shield',25,${myS})" style="padding:6px 12px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:10px;color:#000;font-size:12px;font-weight:700;cursor:pointer;">25 ✦</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.08);">
+            <div><div style="font-size:13px;font-weight:600;">🌟 Звёздный ранг</div><div style="font-size:11px;color:rgba(255,255,255,0.35);">Особый титул в профиле</div></div>
+            <button onclick="buyItem('star_rank',40,${myS})" style="padding:6px 12px;background:linear-gradient(135deg,#ffd700,#ff8800);border:none;border-radius:10px;color:#000;font-size:12px;font-weight:700;cursor:pointer;">40 ✦</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.08);">
+            <div><div style="font-size:13px;font-weight:600;">🎁 Подарить звёзды</div><div style="font-size:11px;color:rgba(255,255,255,0.35);">Переслать ✦ другому игроку</div></div>
+            <button onclick="giftStarsModal()" style="padding:6px 12px;background:rgba(155,0,255,0.2);border:1px solid rgba(155,0,255,0.4);border-radius:10px;color:#d87bff;font-size:12px;font-weight:700;cursor:pointer;">Дать</button>
+          </div>
+        </div>
+      </div>`;
+    renderGameContent();
+  });
+}
+
+window.switchGame=function(game){
+  // Clear math/reaction state when switching
+  if(mathState&&mathState.timer)clearInterval(mathState.timer);
+  mathState=null;
+  if(reactionState&&reactionState.timer)clearTimeout(reactionState.timer);
+  if(reactionState&&reactionState.failTimer)clearTimeout(reactionState.failTimer);
+  reactionState=null;
+  curGame=game;
+  renderGame();
+}
+
+window.buyItem=function(type,cost,myS){
+  if(myS<cost){alert('Недостаточно ✦ звёзд!');return;}
+  db.ref('users/'+myNick+'/stars').once('value').then(s=>{
+    const cur=s.val()||0;
+    if(cur<cost){alert('Недостаточно ✦ звёзд!');return;}
+    if(type==='badge_active'){
+      db.ref('users/'+myNick).update({title:'🔰 Активный',stars:cur-cost});
+      alert('🔰 Значок "Активный" получен!');
+    } else if(type==='rating'){
+      db.ref('users/'+myNick+'/rating').once('value').then(r=>{
+        const nr=Math.min(100,(r.val()||50)+10);
+        db.ref('users/'+myNick).update({rating:nr,stars:cur-cost});
+        alert('⭐ Рейтинг повышен до '+nr+'%!');
+      });
+    } else if(type==='shield'){
+      db.ref('users/'+myNick).update({shield:true,stars:cur-cost});
+      alert('🛡️ Щит репутации активирован! Следующая жалоба не сработает.');
+    } else if(type==='star_rank'){
+      db.ref('users/'+myNick).update({title:'🌟 Звёздный ранг',stars:cur-cost});
+      alert('🌟 Звёздный ранг получен!');
+    }
+    renderGame();
+  });
+}
+
+window.giftStarsModal=function(){
+  openModal('🎁 Подарить звёзды',`
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <input class="inp" id="giftNick" placeholder="Никнейм получателя...">
+      <input class="inp" id="giftAmt" type="number" placeholder="Количество ✦..." min="1">
+      <button class="btn" onclick="sendGift()">🎁 Подарить</button>
+    </div>`);
+}
+
+window.sendGift=function(){
+  const toNick=sn((document.getElementById('giftNick').value||'').trim());
+  const amt=parseInt(document.getElementById('giftAmt').value||0);
+  if(!toNick||toNick===myNick||amt<1){alert('Укажи никнейм и количество');return;}
+  db.ref('users/'+myNick+'/stars').once('value').then(s=>{
+    const cur=s.val()||0;
+    if(cur<amt){alert('Недостаточно звёзд!');return;}
+    db.ref('users/'+toNick).once('value').then(ts=>{
+      if(!ts.val()){alert('Пользователь не найден');return;}
+      db.ref('users/'+myNick+'/stars').set(cur-amt);
+      db.ref('users/'+toNick+'/stars').set((ts.val().stars||0)+amt);
+      closeModal();
+      alert('🎁 Подарено '+amt+' ✦ пользователю '+toNick+'!');
+      renderGame();
+      const dmId=[myNick,toNick].sort().join('_');
+      db.ref('dms/'+dmId+'/messages').push({nick:myNick,text:'🎁 Я подарил тебе '+amt+' ✦ звёзд!',ts:Date.now()});
+      db.ref('dms/'+dmId).update({lastMsg:'🎁 Подарок '+amt+' ✦',lastTs:Date.now()});
+    });
+  });
+}
+
+function renderGameContent(){
+  const el=document.getElementById('gameContent');
+  if(!el)return;
+  if(curGame==='memory')renderMemoryGame(el);
+  else if(curGame==='reaction')renderReactionGame(el);
+  else if(curGame==='math')renderMathGame(el);
+}
+
+// ===== MEMORY GAME =====
+function renderMemoryGame(el){
+  db.ref('users/'+myNick+'/stars').once('value').then(s=>{
+    const myS=s.val()||0;
+    el.innerHTML=`<div class="game-card">
+      <div style="font-size:18px;font-weight:700;font-family:'Space Grotesk',sans-serif;">🧠 Найди пары</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center;">Победа: +1..+5 ✦ • Ошибка: -1..-3 ✦</div>
+      <div class="game-stats">
+        <span>💰 <b style="color:#ffd700;">${myS} ✦</b></span>
+        <span id="gameMoves">Ходы: 0</span>
+        <span id="gameTimer">⏱ 0s</span>
+      </div>
+      <div class="game-board" id="gameBoard"></div>
+      <div id="gameStatus" style="font-size:15px;font-weight:600;min-height:24px;"></div>
+      <button class="game-btn" onclick="startGame()">▶ Начать</button>
+    </div>`;
+  });
+}
+
+// ===== REACTION GAME =====
+let reactionState=null;
+function renderReactionGame(el){
+  db.ref('users/'+myNick+'/stars').once('value').then(s=>{
+    const myS=s.val()||0;
+    el.innerHTML=`<div class="game-card">
+      <div style="font-size:18px;font-weight:700;font-family:'Space Grotesk',sans-serif;">⚡ Реакция</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center;">Нажми кнопку как можно быстрее когда она загорится!</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);">💰 <b style="color:#ffd700;">${myS} ✦</b></div>
+      <div id="reactionTarget" onclick="reactionClick()" style="width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.07);border:3px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:48px;cursor:pointer;transition:all 0.2s;user-select:none;">⏳</div>
+      <div id="reactionStatus" style="font-size:14px;font-weight:600;min-height:20px;text-align:center;color:rgba(255,255,255,0.6);">Нажми старт!</div>
+      <div id="reactionScore" style="font-size:12px;color:rgba(255,255,255,0.4);">Лучшее: ${localStorage.getItem('react_best')||'—'} мс</div>
+      <button class="game-btn" onclick="startReaction()">▶ Старт</button>
+    </div>`;
+  });
+}
+
+window.startReaction=function(){
+  const target=document.getElementById('reactionTarget');
+  const status=document.getElementById('reactionStatus');
+  if(!target)return;
+  if(reactionState&&reactionState.timer)clearTimeout(reactionState.timer);
+  if(reactionState&&reactionState.failTimer)clearTimeout(reactionState.failTimer);
+  target.style.background='rgba(255,255,255,0.07)';
+  target.style.borderColor='rgba(255,255,255,0.1)';
+  target.textContent='⏳';
+  status.textContent='Жди...';
+  status.style.color='rgba(255,255,255,0.6)';
+  reactionState={waiting:true,start:null,timer:null,failTimer:null};
+  const delay=1500+Math.random()*3500;
+  reactionState.timer=setTimeout(()=>{
+    if(!reactionState)return;
+    reactionState.waiting=false;
+    reactionState.start=Date.now();
+    target.style.background='linear-gradient(135deg,#00cc88,#00ff55)';
+    target.style.borderColor='#00ff55';
+    target.textContent='👆';
+    status.textContent='ЖМИ!';
+    status.style.color='#00ff55';
+    reactionState.failTimer=setTimeout(()=>{
+      if(!reactionState)return;
+      status.textContent='Слишком медленно! -1 ✦';
+      status.style.color='#f87171';
+      target.style.background='rgba(255,255,255,0.07)';
+      target.textContent='😴';
+      db.ref('users/'+myNick+'/stars').once('value').then(s=>{db.ref('users/'+myNick+'/stars').set(Math.max(0,(s.val()||0)-1));});
+      reactionState=null;
+    },2000);
+  },delay);
+}
+
+window.reactionClick=function(){
+  if(!reactionState)return;
+  if(reactionState.waiting){
+    if(document.getElementById('reactionStatus'))document.getElementById('reactionStatus').textContent='Слишком рано! -1 ✦';
+    if(document.getElementById('reactionStatus'))document.getElementById('reactionStatus').style.color='#f87171';
+    clearTimeout(reactionState.timer);
+    db.ref('users/'+myNick+'/stars').once('value').then(s=>{db.ref('users/'+myNick+'/stars').set(Math.max(0,(s.val()||0)-1));});
+    reactionState=null;return;
+  }
+  if(reactionState.start){
+    clearTimeout(reactionState.failTimer);
+    const ms=Date.now()-reactionState.start;
+    const prize=ms<200?5:ms<350?4:ms<500?3:ms<750?2:1;
+    const best=parseInt(localStorage.getItem('react_best')||9999);
+    if(ms<best)localStorage.setItem('react_best',ms);
+    if(document.getElementById('reactionStatus'))document.getElementById('reactionStatus').textContent=`${ms} мс! +${prize} ✦`;
+    if(document.getElementById('reactionStatus'))document.getElementById('reactionStatus').style.color='#ffd700';
+    if(document.getElementById('reactionTarget'))document.getElementById('reactionTarget').style.background='linear-gradient(135deg,#9b00ff,#ff0055)';
+    if(document.getElementById('reactionTarget'))document.getElementById('reactionTarget').textContent='🎉';
+    if(document.getElementById('reactionScore'))document.getElementById('reactionScore').textContent='Лучшее: '+Math.min(ms,best)+' мс';
+    db.ref('users/'+myNick+'/stars').once('value').then(s=>{db.ref('users/'+myNick+'/stars').set((s.val()||0)+prize);});
+    reactionState=null;
+  }
+}
+
+// ===== MATH GAME — FIXED =====
+let mathState=null;
+function renderMathGame(el){
+  db.ref('users/'+myNick+'/stars').once('value').then(s=>{
+    const myS=s.val()||0;
+    el.innerHTML=`<div class="game-card">
+      <div style="font-size:18px;font-weight:700;font-family:'Space Grotesk',sans-serif;">🧮 Быстрый счёт</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center;">5 примеров, 8 секунд на каждый. +2 ✦ за правильный ответ!</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);">💰 <b style="color:#ffd700;">${myS} ✦</b></div>
+      <div id="mathQ" style="font-size:32px;font-weight:700;min-height:44px;text-align:center;"></div>
+      <div id="mathTimer" style="font-size:12px;color:rgba(255,255,255,0.4);"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;" id="mathAnswers"></div>
+      <div id="mathStatus" style="font-size:14px;font-weight:600;min-height:20px;text-align:center;"></div>
+      <div id="mathProgress" style="font-size:12px;color:rgba(255,255,255,0.4);"></div>
+      <button class="game-btn" onclick="startMath()">▶ Начать</button>
+    </div>`;
+  });
+}
+
+// FIX: Clear previous timer before starting new game
+window.startMath=function(){
+  if(mathState&&mathState.timer)clearInterval(mathState.timer);
+  mathState={q:0,score:0,timer:null};
+  nextMathQ();
+}
+
+function nextMathQ(){
+  if(!mathState)return;
+  if(mathState.q>=5){
+    const score=mathState.score;
+    const earned=score*2;
+    const qEl=document.getElementById('mathQ');
+    const aEl=document.getElementById('mathAnswers');
+    const stEl=document.getElementById('mathStatus');
+    const prEl=document.getElementById('mathProgress');
+    if(qEl)qEl.textContent='🎉 Готово!';
+    if(aEl)aEl.innerHTML='';
+    if(stEl){stEl.textContent=`Правильно: ${score}/5 • +${earned} ✦`;stEl.style.color='#ffd700';}
+    if(prEl)prEl.textContent='';
+    if(earned>0){db.ref('users/'+myNick+'/stars').once('value').then(s=>{db.ref('users/'+myNick+'/stars').set((s.val()||0)+earned);});}
+    mathState=null;
+    return;
+  }
+  if(mathState.timer)clearInterval(mathState.timer);
+  const ops=['+','-','×'];
+  const op=ops[Math.floor(Math.random()*ops.length)];
+  let a=Math.floor(Math.random()*20)+1,b=Math.floor(Math.random()*20)+1;
+  if(op==='-'&&b>a){const tmp=a;a=b;b=tmp;}
+  const correct=op==='+'?a+b:op==='-'?a-b:a*b;
+  const wrong=()=>{let w;let tries=0;do{w=correct+(Math.floor(Math.random()*8)+1)*(Math.random()<0.5?1:-1);tries++;}while(w===correct&&tries<20);return w;}
+  const answers=[correct,wrong(),wrong(),wrong()].sort(()=>Math.random()-0.5);
+  const qEl=document.getElementById('mathQ');
+  const tEl=document.getElementById('mathTimer');
+  const aEl=document.getElementById('mathAnswers');
+  const stEl=document.getElementById('mathStatus');
+  const prEl=document.getElementById('mathProgress');
+  if(qEl)qEl.textContent=`${a} ${op} ${b} = ?`;
+  if(prEl)prEl.textContent=`Вопрос ${mathState.q+1} из 5`;
+  if(stEl){stEl.textContent='';stEl.style.color='';}
+  let timeLeft=8;
+  if(tEl)tEl.textContent=`⏱ ${timeLeft}s`;
+  if(aEl)aEl.innerHTML=answers.map(ans=>`<button onclick="answerMath(${ans},${correct})" style="padding:14px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:18px;font-weight:700;cursor:pointer;transition:background 0.2s;">${ans}</button>`).join('');
+  mathState.timer=setInterval(()=>{
+    if(!mathState)return;
+    timeLeft--;
+    const timerEl=document.getElementById('mathTimer');
+    if(timerEl)timerEl.textContent=`⏱ ${timeLeft}s`;
+    if(timeLeft<=0){
+      clearInterval(mathState.timer);
+      mathState.timer=null;
+      const st=document.getElementById('mathStatus');
+      if(st){st.textContent='Время вышло! -1 ✦';st.style.color='#f87171';}
+      db.ref('users/'+myNick+'/stars').once('value').then(s=>{db.ref('users/'+myNick+'/stars').set(Math.max(0,(s.val()||0)-1));});
+      if(mathState)mathState.q++;
+      setTimeout(nextMathQ,900);
+    }
+  },1000);
+}
+
+window.answerMath=function(ans,correct){
+  if(!mathState)return;
+  clearInterval(mathState.timer);
+  mathState.timer=null;
+  const st=document.getElementById('mathStatus');
+  const answersEl=document.getElementById('mathAnswers');
+  if(ans===correct){
+    mathState.score++;
+    if(st){st.textContent='✅ Верно! +2 ✦';st.style.color='#4ade80';}
+  } else {
+    if(st){st.textContent=`❌ Неверно! Ответ: ${correct}`;st.style.color='#f87171';}
+  }
+  if(answersEl)answersEl.querySelectorAll('button').forEach(b=>{b.disabled=true;if(parseInt(b.textContent)===correct)b.style.background='rgba(74,222,128,0.25)';else if(parseInt(b.textContent)===ans)b.style.background='rgba(248,113,113,0.2)';});
+  mathState.q++;
+  setTimeout(nextMathQ,900);
+}
+
+function startGame(){
+  if(gameState&&gameState.timer)clearInterval(gameState.timer);
+  const emojis=[...GAME_EMOJIS,...GAME_EMOJIS].sort(()=>Math.random()-0.5);
+  gameState={cards:emojis.map((e,i)=>({id:i,emoji:e,revealed:false,matched:false})),first:null,second:null,moves:0,matched:0,start:Date.now(),timer:null,locked:false};
+  gameState.timer=setInterval(()=>{
+    const el=document.getElementById('gameTimer');
+    if(el)el.textContent='⏱ '+Math.floor((Date.now()-gameState.start)/1000)+'s';
+  },1000);
+  renderGameBoard();
+  const gs=document.getElementById('gameStatus');
+  const gm=document.getElementById('gameMoves');
+  if(gs)gs.textContent='';
+  if(gm)gm.textContent='Ходы: 0';
+}
+
+function renderGameBoard(){
+  if(!gameState)return;
+  const board=document.getElementById('gameBoard');
+  if(!board)return;
+  board.innerHTML=gameState.cards.map((c,i)=>`
+    <div class="game-cell ${c.revealed||c.matched?'revealed':''} ${c.matched?'matched':''}" onclick="flipCard(${i})">
+      ${c.revealed||c.matched?c.emoji:''}
+    </div>`).join('');
+}
+
+window.flipCard=function(idx){
+  if(!gameState||gameState.locked)return;
+  const c=gameState.cards[idx];
+  if(c.revealed||c.matched)return;
+  c.revealed=true;
+  renderGameBoard();
+  if(!gameState.first&&gameState.first!==0){gameState.first=idx;}
+  else if(gameState.second===null&&gameState.second!==0){
+    gameState.second=idx;
+    gameState.moves++;
+    const gm=document.getElementById('gameMoves');
+    if(gm)gm.textContent='Ходы: '+gameState.moves;
+    gameState.locked=true;
+    setTimeout(()=>{
+      if(!gameState)return;
+      const a2=gameState.cards[gameState.first],b=gameState.cards[gameState.second];
+      if(a2.emoji===b.emoji){
+        a2.matched=b.matched=true;
+        gameState.matched+=2;
+        gameState.first=null;gameState.second=null;gameState.locked=false;
+        renderGameBoard();
+        if(gameState.matched===gameState.cards.length){
+          clearInterval(gameState.timer);
+          const time=Math.floor((Date.now()-gameState.start)/1000);
+          const prize=Math.max(1,Math.min(5,Math.floor(30/Math.max(1,gameState.moves))));
+          db.ref('users/'+myNick+'/stars').once('value').then(s=>{
+            const cur=s.val()||0;
+            db.ref('users/'+myNick+'/stars').set(cur+prize);
+          });
+          const gs=document.getElementById('gameStatus');
+          if(gs)gs.textContent=`🎉 Победа! +${prize} ✦ за ${time}s!`;
+          setTimeout(renderGame,2500);
+        }
+      }else{
+        const cells=document.getElementById('gameBoard')?.children;
+        if(cells&&cells[gameState.first])cells[gameState.first].classList.add('wrong');
+        if(cells&&cells[gameState.second])cells[gameState.second].classList.add('wrong');
+        setTimeout(()=>{
+          if(!gameState)return;
+          a2.revealed=b.revealed=false;
+          gameState.first=null;gameState.second=null;gameState.locked=false;
+          renderGameBoard();
+        },600);
+        db.ref('users/'+myNick+'/stars').once('value').then(s=>{
+          if((s.val()||0)>0){
+            const lose=Math.floor(Math.random()*3)+1;
+            db.ref('users/'+myNick+'/stars').set(Math.max(0,(s.val()||0)-lose));
+            const st=document.getElementById('gameStatus');
+            if(st){st.textContent=`-${lose} ✦`;st.style.color='#f87171';setTimeout(()=>{if(st){st.textContent='';st.style.color='';}},800);}
+          }
+        });
+      }
+    },700);
+  }
+}
+
+// ===== SHOP SCREEN =====
+const SUBSCRIPTION_PLANS=[
+  {
+    id:'month',
+    title:'1 месяц',
+    price:'500₽',
+    period:'в месяц',
+    badge:'✨',
+    badgeClass:'hot',
+    badgeText:'Популярное',
+    cardClass:'popular',
+    btnClass:'',
+    stars:50,
+    shieldCount:1,
+    features:[
+      {icon:'✦',text:'50 звёзд при активации'},
+      {icon:'✨',text:'Значок виден всем в ленте и чатах'},
+      {icon:'🔮',text:'Фиолетовая рамка аватара'},
+      {icon:'🛡️',text:'Защита от 1 жалобы'},
+      {icon:'📌',text:'Закрепить 1 пост в ленте'},
+    ],
+    durationMs:30*24*60*60*1000
+  },
+  {
+    id:'quarter',
+    title:'3 месяца',
+    price:'3.500₽',
+    period:'за 3 месяца',
+    badge:'💫',
+    badgeClass:'deal',
+    badgeText:'Продвинутое',
+    cardClass:'',
+    btnClass:'',
+    stars:150,
+    shieldCount:3,
+    features:[
+      {icon:'✦',text:'150 звёзд при активации'},
+      {icon:'💫',text:'Значок виден в ленте, чатах и профилях'},
+      {icon:'🟡',text:'Золотая рамка аватара'},
+      {icon:'🛡️',text:'Защита от 3 жалоб'},
+      {icon:'📌',text:'Закрепить 3 поста в ленте'},
+    ],
+    durationMs:90*24*60*60*1000
+  },
+  {
+    id:'year',
+    title:'1 год',
+    price:'2.999₽',
+    period:'в год — лучшая цена!',
+    badge:'👑',
+    badgeClass:'deal',
+    badgeText:'Выгоднее всего',
+    cardClass:'best-val',
+    btnClass:'gold',
+    stars:300,
+    shieldCount:999,
+    features:[
+      {icon:'✦',text:'300 звёзд при активации'},
+      {icon:'👑',text:'Значок VIP везде (лента, чаты, профиль)'},
+      {icon:'✨',text:'Золотая анимированная рамка аватара'},
+      {icon:'🛡️',text:'Полная защита от жалоб (навсегда)'},
+      {icon:'📌',text:'Без ограничений на закреп постов'},
+      {icon:'🎨',text:'Эксклюзивная тема "Королевский"'},
+    ],
+    durationMs:365*24*60*60*1000
+  }
+];
+
+function renderShop(){
+  const wrap=document.getElementById('shopWrap');
+  db.ref('users/'+myNick).once('value').then(snap=>{
+    const u=snap.val()||{};
+    const sub=u.subscription;
+    let activeBanner='';
+    if(sub&&sub.until>Date.now()){
+      activeBanner=`<div class="active-sub-banner">
+        <div style="font-size:32px;">${sub.badge||'✨'}</div>
+        <div><div style="font-size:14px;font-weight:700;">Подписка активна</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);">До ${new Date(sub.until).toLocaleDateString('ru-RU')}</div></div>
+      </div>`;
+    }
+    wrap.innerHTML=`
+      <div style="padding:12px 4px 8px;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px;">🛒 Подписки FitChat</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.4);">Открой эксклюзивные возможности</div>
+      </div>
+      ${activeBanner}
+      ${SUBSCRIPTION_PLANS.map(plan=>`
+        <div class="sub-card ${plan.cardClass}">
+          <div class="sub-badge ${plan.badgeClass}">${plan.badgeText}</div>
+          <div style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:4px;">${plan.title}</div>
+          <div class="sub-price">${plan.price}</div>
+          <div class="sub-period">${plan.period}</div>
+          <div class="sub-features">
+            ${plan.features.map(f=>`<div class="sub-feat"><span class="sub-feat-icon">${f.icon}</span><span>${f.text}</span></div>`).join('')}
+          </div>
+          <button class="sub-buy-btn ${plan.btnClass}" onclick="buySubscription('${plan.id}')">Купить за ${plan.price}</button>
+        </div>
+      `).join('')}
+      <div style="margin:16px 4px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.3);line-height:1.6;">
+          💡 <b style="color:rgba(255,255,255,0.5);">Как оплатить:</b> Нажми кнопку "Купить", следуй инструкции и напиши администратору свой никнейм. Подписка активируется в течение 24 часов после подтверждения оплаты.
+        </div>
+      </div>`;
+  });
+}
+
+window.buySubscription=function(planId){
+  const plan=SUBSCRIPTION_PLANS.find(p=>p.id===planId);
+  if(!plan)return;
+  openModal('💳 Оплата подписки',`
+    <div style="display:flex;flex-direction:column;gap:14px;align-items:center;">
+      <div style="font-size:40px;">${plan.badge}</div>
+      <div style="text-align:center;">
+        <div style="font-size:20px;font-weight:700;">${plan.title} — ${plan.price}</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.4);margin-top:4px;">FitChat Premium Subscription</div>
+      </div>
+      <div style="width:100%;padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:14px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">📋 Инструкция по оплате:</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.8;">
+          1. Переведи <b style="color:#ffd700;">${plan.price}</b> на карту администратора<br>
+          2. В комментарии к переводу укажи свой никнейм: <b style="color:#d87bff;">${myNick}</b><br>
+          3. Напиши администратору в FitChat о переводе<br>
+          4. Подписка активируется в течение 24 часов
+        </div>
+      </div>
+      <button class="btn" onclick="contactAdmin('${plan.title}')">💬 Написать администратору</button>
+      <div style="font-size:11px;color:rgba(255,255,255,0.3);text-align:center;">После оплаты ты получишь ${plan.stars} ✦ звёзд и значок ${plan.badge}</div>
+    </div>`);
+}
+
+window.contactAdmin=function(planTitle){
+  closeModal();
+  const dmId=[myNick,ADMIN].sort().join('_');
+  const msg=`💳 Хочу купить подписку "${planTitle}". Мой никнейм: ${myNick}`;
+  db.ref('dms/'+dmId).once('value').then(s=>{
+    if(!s.val())db.ref('dms/'+dmId).set({lastMsg:'',lastTs:Date.now()});
+    db.ref('dms/'+dmId+'/messages').push({nick:myNick,text:msg,ts:Date.now()});
+    db.ref('dms/'+dmId).update({lastMsg:msg.substring(0,40),lastTs:Date.now()});
+    openChat(dmId,'dm',ADMIN,gc(ADMIN));
+  });
+}
+
+// Admin: activate subscription from panel UI
+window.adminActivateSub=function(){
+  const nick=(document.getElementById('aSubNick').value||'').trim();
+  const planId=(document.getElementById('aSubPlan').value||'month');
+  const res=document.getElementById('aSubResult');
+  if(!nick){if(res)res.innerHTML='<span style="color:#f87171;">⚠️ Введи никнейм</span>';return;}
+  const plan=SUBSCRIPTION_PLANS.find(p=>p.id===planId);
+  if(!plan)return;
+  const sc=plan.shieldCount||0;
+  const subData={planId,badge:plan.badge,until:Date.now()+plan.durationMs,activatedBy:ADMIN,activatedAt:Date.now()};
+  db.ref('users/'+nick).once('value').then(s=>{
+    if(!s.val()){if(res)res.innerHTML='<span style="color:#f87171;">❌ Пользователь не найден</span>';return;}
+    const cur=s.val();
+    db.ref('users/'+nick).update({subscription:subData,stars:(cur.stars||0)+plan.stars,title:plan.badge+' Subscriber',shield:sc>0,shieldCount:sc}).then(()=>{
+      if(res)res.innerHTML='<span style="color:#4ade80;">✅ '+plan.badge+' '+plan.title+' → '+nick+'</span>';
+    });
+  }).catch(()=>{if(res)res.innerHTML='<span style="color:#f87171;">❌ Ошибка Firebase</span>';});
+}
+
+// Admin: quick sub from profile page (3 buttons)
+window.quickSub=function(planId){
+  if(myNick!==ADMIN)return;
+  const nick=(document.getElementById('pSubNick').value||'').trim();
+  const res=document.getElementById('pSubResult');
+  if(!nick){if(res)res.innerHTML='<span style="color:#f87171;">⚠️ Введи никнейм получателя</span>';return;}
+  const plan=SUBSCRIPTION_PLANS.find(p=>p.id===planId);
+  if(!plan)return;
+  const until=Date.now()+plan.durationMs;
+  const sc=plan.shieldCount||0;
+  const subData={planId,badge:plan.badge,until,activatedBy:ADMIN,activatedAt:Date.now()};
+  db.ref('users/'+nick).once('value').then(s=>{
+    if(!s.val()){if(res)res.innerHTML='<span style="color:#f87171;">❌ Пользователь не найден</span>';return;}
+    const cur=s.val();
+    db.ref('users/'+nick).update({
+      subscription:subData,
+      stars:(cur.stars||0)+plan.stars,
+      title:plan.badge+' Subscriber',
+      shield:sc>0,
+      shieldCount:sc
+    }).then(()=>{
+      if(res)res.innerHTML='<span style="color:#4ade80;">✅ Подписка '+plan.badge+' '+plan.title+' выдана '+nick+'!</span>';
+      document.getElementById('pSubNick').value='';
+    });
+  }).catch(()=>{
+    if(res)res.innerHTML='<span style="color:#f87171;">❌ Ошибка Firebase. Проверь правила БД.</span>';
+  });
+}
+
+// Admin: activate subscription for user
+window.activateSubscription=function(nick,planId){
+  const plan=SUBSCRIPTION_PLANS.find(p=>p.id===planId);
+  if(!plan||myNick!==ADMIN)return;
+  const until=Date.now()+plan.durationMs;
+  const subData={planId,badge:plan.badge,until,activatedBy:ADMIN,activatedAt:Date.now()};
+  db.ref('users/'+nick).once('value').then(s=>{
+    const cur=s.val()||{};
+    const sc=plan.shieldCount||0;
+    db.ref('users/'+nick).update({
+      subscription:subData,
+      stars:(cur.stars||0)+plan.stars,
+      title:plan.badge+' Subscriber',
+      shield:sc>0,
+      shieldCount:sc
+    });
+    alert('✅ Подписка "'+plan.title+'" активирована для '+nick+'!\n+'+plan.stars+' ✦ звёзд\n🛡️ Щит: '+sc+(sc>=999?' (полная защита)':' жалоб'));
+  });
+}
+
+// AI
+function updateAILimit(){const u=parseInt(localStorage.getItem('ai_'+tdk())||0);const el=document.getElementById('aiLimit');if(el)el.textContent=u+'/'+AI_LIMIT;}
+window.toggleAI=()=>{document.getElementById('aiPanel').classList.toggle('open');updateAILimit();}
+window.qAI=mode=>{document.getElementById('aiInp').value=mode+': ';document.getElementById('aiInp').focus();}
+
+window.sendAI=async()=>{
+  const inp=document.getElementById('aiInp');
+  const text=inp.value.trim();if(!text)return;
+  const used=parseInt(localStorage.getItem('ai_'+tdk())||0);
+  if(used>=AI_LIMIT){addAImsg('⚠️ Лимит исчерпан на сегодня ('+AI_LIMIT+' запросов)','ai');return;}
+  inp.value='';
+  addAImsg(text,'user');
+  addAImsg('⏳ Думаю...','ai','ait');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:500,
+        system:'Ты дружелюбный фитнес-помощник в мессенджере FitChat. Отвечай кратко, по-русски, дружелюбно. Помогаешь с фитнесом, питанием, мотивацией, исправлением текста.',
+        messages:[{role:'user',content:text}]
+      })
+    });
+    const d=await r.json();
+    document.getElementById('ait')?.remove();
+    if(d.error){addAImsg('❌ Ошибка: '+d.error.message,'ai');return;}
+    const reply=d.content?.[0]?.text||'Нет ответа';
+    lastAI=reply;addAImsg(reply,'ai');
+    document.getElementById('aiToChat').style.display='block';
+    localStorage.setItem('ai_'+tdk(),used+1);updateAILimit();
+  }catch(e){
+    document.getElementById('ait')?.remove();
+    addAImsg('❌ Ошибка подключения: '+e.message,'ai');
+  }
+}
+
+function addAImsg(text,role,id){
+  const el=document.getElementById('aiMsgs');
+  const div=document.createElement('div');
+  div.className='ai-msg '+role;div.textContent=text;if(id)div.id=id;
+  el.appendChild(div);el.scrollTop=el.scrollHeight;
+}
+
+window.aiInsert=()=>{if(lastAI)document.getElementById('chatInp').value=lastAI;}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+
+// Init theme on load
+(()=>{const th=localStorage.getItem('fct')||'default';applyTheme(th);})();
+</script>
+</body>
+</html>
