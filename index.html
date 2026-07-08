@@ -180,7 +180,7 @@ function loadStoriesBar(){
       var stories=byUser[nick];
       var seenAll=stories.every(function(s){return s.views&&s.views[myNick];});
       var prem=presenceCache[nick]&&presenceCache[nick].premium;
-      html+='<div class="story-item" onclick="viewStories(''+nick+'')">'
+      html+='<div class="story-item" onclick="viewStories(\''+nick+'\')">'
         +'<div class="story-av-wrap has-story'+(seenAll?' seen':'')+(prem?' premium-ring':'')+'">'
         +'<div class="story-av-inner" style="'+avBg(gc(nick),avatarCache[nick])+'">'+avTxt(nick,avatarCache[nick])+'</div>'
         +'</div><div class="story-nick">'+nick+'</div></div>';
@@ -341,7 +341,7 @@ window.giftStarFromStory=function(){
     '<div style="display:flex;flex-direction:column;gap:10px;">'
     +'<div style="font-size:14px;color:rgba(255,255,255,0.6);">Пользователю <b>'+t+'</b></div>'
     +'<input class="inp" id="svGiftAmt" type="number" placeholder="Количество ✶..." min="1">'
-    +'<button class="btn" onclick="sendStoryGift(''+t+'')">✶ Подарить</button></div>');
+    +'<button class="btn" onclick="sendStoryGift(\''+t+'\')">✶ Подарить</button></div>');
 };
 window.sendStoryGift=function(target){
   var amt=parseInt(((document.getElementById('svGiftAmt')||{}).value)||0);
@@ -2001,7 +2001,7 @@ function renderReactions(chatId,type,msgId,m){
 }
 
 function bubbleHtmlFor(msgId,m){
-  if(m.chessGame){var cg=m.chessGame,isP=(myNick===cg.white||myNick===cg.black);parts.push('<div class="ch-msg"><div style="font-size:14px;font-weight:700;">âï¸ Ð¨Ð°ÑÐ¼Ð°ÑÐ½ÑÐ¹ Ð¼Ð°ÑÑ!</div><div style="font-size:13px;color:rgba(255,255,255,0.8);">â '+cg.white+' vs â '+cg.black+'</div><div class="ch-msg-btns">'+(isP?'<button class="ch-msg-btn go" onclick="openChessGame(\''+cg.id+'\')">&#x25B6; ÐÑÐºÑÑÑÑ</button>':'')+'<button class="ch-msg-btn" onclick="openChessGame(\''+cg.id+'\')">ÐÑÐ¾ÑÐ¼Ð¾ÑÑÐµÑÑ</button></div></div>');continue;}
+  if(m.chessGame){var cg=m.chessGame,isP=(myNick===cg.white||myNick===cg.black);return '<div class="ch-msg"><div style="font-size:14px;font-weight:700;">♟️ Шахматный матч!</div><div style="font-size:13px;color:rgba(255,255,255,0.8);">♔ '+cg.white+' vs ♚ '+cg.black+'</div><div class="ch-msg-btns">'+(isP?'<button class="ch-msg-btn go" onclick="openChessGame(\''+cg.id+'\')">&#x25B6; Открыть</button>':'')+'<button class="ch-msg-btn" onclick="openChessGame(\''+cg.id+'\')">Просмотреть</button></div></div>';}
     if(m.missedCall){
     const isVideo=m.callType==='video';
     return `<div class="missed-call-bubble">${isVideo?'🎥':'📵'} Пропущенный ${isVideo?'видеозвонок':'аудиозвонок'}<span class="mc-callback" onclick="startCall('${m.callType||'audio'}')">↩️</span></div>`;
