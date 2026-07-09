@@ -2,6 +2,18 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<script>
+(function(){
+  function showErr(msg){
+    var d=document.createElement('div');
+    d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:999999;background:#ff0033;color:#fff;padding:14px;font:13px monospace;white-space:pre-wrap;word-break:break-all;max-height:60vh;overflow:auto;';
+    d.textContent='⚠️ ОШИБКА: '+msg;
+    document.body?document.body.appendChild(d):window.addEventListener('DOMContentLoaded',function(){document.body.appendChild(d);});
+  }
+  window.addEventListener('error',function(e){showErr((e.message||'')+' | файл:'+(e.filename||'?')+' стр:'+(e.lineno||'?'));});
+  window.addEventListener('unhandledrejection',function(e){showErr('Promise rejection: '+(e.reason&&e.reason.message||e.reason));});
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0d0010">
 <meta name="apple-mobile-web-app-capable" content="yes">
