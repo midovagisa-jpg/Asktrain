@@ -358,7 +358,7 @@ function cleanOldStories(){
 // ⚠️ Получи ключи в Firebase Console → Project Settings → Cloud Messaging:
 //    VAPID Key: Web Push certificates → Generate key pair → скопируй "Key pair"
 //    Server Key: Cloud Messaging API (Legacy) → Server Key
-var FCM_VAPID_KEY = 'YOUR_VAPID_KEY'; // <-- вставь сюда
+var FCM_VAPID_KEY = 'BOsIv-YSGvE8xKe9QCExytiNO9O_NIqR53wkjgTlJeUF0ocOg0S5lHWP6Ie575Tbp4uh69s1X3_kmqvVbKjyNJ0';
 var FCM_SERVER_KEY = 'YOUR_FCM_SERVER_KEY'; // <-- вставь сюда
 
 var _fcmToken = null;
@@ -511,8 +511,8 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .theme-forest .bottom-glow-strip{background:linear-gradient(90deg,#00cc88,#00ff55,#00cc88);background-size:200% 100%;box-shadow:0 0 12px 2px #00cc88aa,0 0 24px 4px #00ff5566;}
 .theme-sunset .bottom-glow-strip{background:linear-gradient(90deg,#ff8800,#ff0055,#ff8800);background-size:200% 100%;box-shadow:0 0 12px 2px #ff8800aa,0 0 24px 4px #ff005566;}
 
-.screen{display:none;position:absolute;inset:0;flex-direction:column;background:transparent;z-index:1;transition:opacity 0.22s ease;}
-.screen.active{display:flex;opacity:1!important;transform:translateY(0)!important;transition:opacity 0.2s ease,transform 0.2s ease;}.screen:not(.active){transform:translateY(8px);opacity:0;transition:opacity 0.2s ease,transform 0.2s ease;}
+.screen{display:none;position:absolute;inset:0;flex-direction:column;background:transparent;z-index:1;transition:transform 0.26s cubic-bezier(0.4,0,0.2,1),opacity 0.22s ease;}
+.screen.active{display:flex;z-index:2;}
 .login-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 30% 20%,#9b00ff22,transparent 60%),radial-gradient(ellipse at 70% 80%,#ff005522,transparent 60%);}
 .login-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:32px 24px;width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:16px;backdrop-filter:blur(12px);}
 .app-name{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;background:linear-gradient(135deg,#d87bff,#ff6b9d,#d87bff);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;animation:nameShimmer 3s linear infinite;}
@@ -868,17 +868,7 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
 .push-toast-body{flex:1;min-width:0;}
 .push-toast-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .push-toast-text{font-size:12px;color:rgba(255,255,255,0.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
-.push-toast-close{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:rgba(255,255,255,0.5);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-
-
-/* CHESS */
-.chess-ov{position:fixed;inset:0;z-index:900;background:#0d0010;display:none;flex-direction:column;}
-.chess-ov.open{display:flex;}
-.chess-top{display:flex;align-items:center;padding:8px 12px;gap:8px;background:rgba(0,0,0,0.4);}
-.ch-badge{flex:1;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);min-width:0;}
-.ch-badge.active{background:rgba(155,0,255,0.18);border-color:rgba(155,0,255,0.5);}
-.ch-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;background-size:cover;background-position:center;}
-</style>
+.push-toast-close{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:rgba(255,255,255,0.5);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}</style>
   <link rel="icon" href="icon-192.png" sizes="192x192">
   <link rel="icon" href="favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" href="icon-180.png">
@@ -956,7 +946,6 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
     <div class="tab" onclick="setTab('group',this)">Группы</div>
     <div class="tab" onclick="setTab('channel',this)">Каналы</div>
   </div>
-  <div style="display:flex;justify-content:flex-end;padding:4px 14px 0;"><button onclick="openFitBot()" style="padding:6px 14px;border-radius:20px;background:linear-gradient(135deg,rgba(155,0,255,0.3),rgba(255,0,85,0.3));border:1px solid rgba(155,0,255,0.35);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">ð¤ FitBot AI</button></div>
   <div class="stories-bar" id="storiesBar"></div>
   <div class="list" id="chatsList"><div class="empty"><div>💬</div><div>Нет чатов. Нажми ✏️!</div></div></div>
   <div class="bottom-nav" id="bnChats">
@@ -1129,7 +1118,6 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
   </div>
   <div class="chat-input-bar" id="channelComposerWrap" style="display:none;">
     <div class="attach-btn" onclick="document.getElementById('channelFileInp').click()">📎</div>
-    <div class="attach-btn" onclick="openChessQ()" title="♟️">♟️</div>
     <input type="file" id="channelFileInp" accept="image/*,video/*" style="display:none;" onchange="handleChannelFile(this)">
     <textarea class="chat-inp" id="channelPostInp" placeholder="Написать в канал..." rows="1" oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();postToChannel();}"></textarea>
     <div class="round-rec-btn" onclick="openRoundRecorder('channel')" title="Видео-кружок">⭕</div>
@@ -1241,7 +1229,7 @@ function avTxt(nick,avatarUrl){return avatarUrl?'':(nick&&nick[0]?nick[0].toUppe
 function gc(s){let h=0;for(let c of s)h=Math.imul(31,h)+c.charCodeAt(0)|0;return COLORS[Math.abs(h)%COLORS.length];}
 function sn(n){return n.trim().replace(/\s+/g,'_').replace(/[.#$\[\]\/]/g,'_');}
 function tdk(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
-function ss(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function ss(id,dir){var next=document.getElementById(id);var prev=document.querySelector('.screen.active');if(!next||next===prev)return;next.style.transition='none';if(dir==='forward'){next.style.transform='translateX(100%)';next.style.opacity='0.5';}else if(dir==='back'){next.style.transform='translateX(-28%)';next.style.opacity='0.7';}else{next.style.transform='translateY(10px)';next.style.opacity='0';}next.style.display='flex';next.getBoundingClientRect();next.style.transition='';next.style.transform='';next.style.opacity='';next.classList.add('active');if(prev){prev.classList.remove('active');if(dir==='forward'){prev.style.transform='translateX(-28%)';prev.style.opacity='0';}else if(dir==='back'){prev.style.transform='translateX(100%)';prev.style.opacity='0.5';}else{prev.style.transform='translateY(-6px)';prev.style.opacity='0';}var _p=prev;setTimeout(function(){_p.style.display='';_p.style.transform='';_p.style.opacity='';},280);}}
 function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
 function openModal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;document.getElementById('modalOverlay').classList.add('open');}
 
@@ -1280,8 +1268,7 @@ function applyTheme(th){
   if(orb3)orb3.style.background=ob.o3;
   document.body.style.background=ob.bg;
   // Apply gradient colors to buttons and accents
-  document.querySelectorAll('.btn,.send-btn,.game-btn,.small-btn,.small-send').forEach(el=>{el.style.background=`linear-gradient(135deg,${tc.g1},${tc.g2})`;});
-  document.querySelectorAll('.msg-group.mine .bubble').forEach(el=>{el.style.background=`linear-gradient(135deg,${tc.g1}aa,${tc.g2}aa)`;});
+  var _ds=document.getElementById('_dynTheme');if(!_ds){_ds=document.createElement('style');_ds.id='_dynTheme';document.head.appendChild(_ds);}_ds.textContent='.btn,.send-btn,.game-btn,.small-btn,.small-send{background:linear-gradient(135deg,'+tc.g1+','+tc.g2+')!important;}.msg-group.mine .bubble{background:linear-gradient(135deg,'+tc.g1+'aa,'+tc.g2+'aa)!important;}';
 }
 window.setTheme=(th,el)=>{document.querySelectorAll('.theme-opt').forEach(o=>o.classList.remove('selected'));el.classList.add('selected');localStorage.setItem('fct',th);applyTheme(th);}
 
@@ -1628,7 +1615,6 @@ window.openChat=function(id,type,name,color){
   document.getElementById('chatName').innerHTML=name+roleBadgeHtml(name);
   document.getElementById('chatPresence').innerHTML=type==='dm'?presenceHtml(name):'';
   document.getElementById('grpSettBtn').style.display=type==='group'?'flex':'none';
-  var _cb=document.getElementById('chessBtn');if(_cb)_cb.style.display='flex';
   document.getElementById('callAudioBtn').style.display=type==='dm'?'flex':'none';
   document.getElementById('callVideoBtn').style.display=type==='dm'?'flex':'none';
   curCallPeer=name;
@@ -1654,10 +1640,10 @@ window.openChat=function(id,type,name,color){
   const lrCb=snap=>{curChatLastRead=snap.val()||{};refreshTicksInView();};
   lrRef.on('value',lrCb);lastReadListenerRef={ref:lrRef,cb:lrCb};
 
-  ss('chatScreen');history.pushState(null,'',location.href);loadMsgs(id,type);
+  ss('chatScreen','forward');history.pushState(null,'',location.href);loadMsgs(id,type);
 }
 
-function backToChats(){ss('chatsScreen');curChat=null;}
+function backToChats(){ss('chatsScreen','back');curChat=null;}
 
 window.viewChatUserProfile=function(){
   const name=document.getElementById('chatName').textContent;
@@ -2440,7 +2426,7 @@ window.openChannel=function(id,name,color){
   document.getElementById('chAv').setAttribute('style','width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0;'+avBg(color,null));
   document.getElementById('chAv').textContent='📢';
   document.getElementById('chName').textContent=name;
-  ss('channelScreen');
+  ss('channelScreen','forward');
   db.ref('channels/'+id).once('value').then(snap=>{
     const ch=snap.val()||{};
     const isSub=!!(ch.subscribers&&ch.subscribers[myNick]);
@@ -2843,8 +2829,11 @@ window.startDM=function(){
   db.ref('users/'+nick).once('value').then(s=>{
     if(!s.val()){alert('Пользователь не найден');return;}
     const dmId=[myNick,nick].sort().join('_');
-    closeModal();
-    openChat(dmId,'dm',nick,gc(nick));
+    db.ref('dms/'+dmId).once('value').then(function(dmSnap){
+      if(!dmSnap.val()){db.ref('dms/'+dmId).set({lastMsg:'',lastTs:Date.now()});}
+      closeModal();
+      openChat(dmId,'dm',nick,gc(nick));
+    });
   });
 }
 window.createGroup=function(){const n=document.getElementById('ncGroup').value.trim();if(!n)return;const id='g_'+Date.now();db.ref('groups/'+id).set({name:n,color:gc(n),creator:myNick,members:{[myNick]:true},lastMsg:'',lastTs:Date.now()});closeModal();openChat(id,'group',n,gc(n));}
@@ -3252,7 +3241,7 @@ function renderProfile(){
       <div class="profile-section">
         <div class="profile-section-title">🎨 Тема</div>
         ${['default','ocean','forest','sunset','royal'].map(th2=>{
-          const hasSub=localStorage.getItem('fc_sub')==='true';
+          const hasSub=!!window._myPremium;
           const names={default:'Фиолетовый',ocean:'Океан',forest:'Лес',sunset:'Закат',royal:'👑 Золотой (Premium)'};
           const grads={default:'#9b00ff,#ff0055',ocean:'#0088ff,#00ccff',forest:'#00cc88,#00ff55',sunset:'#ff8800,#ff0055',royal:'#ffd700,#ff8c00'};
           const cur=localStorage.getItem('fct')||'default';
