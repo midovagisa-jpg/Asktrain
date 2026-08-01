@@ -1500,7 +1500,13 @@ function ensureFounderChat(){
 // AUTO LOGIN (если телефон уже подтверждался на этом устройстве)
 (()=>{
   const savedPhone=localStorage.getItem('fphone'),savedNick=localStorage.getItem('fn');
-  if(savedPhone&&savedNick){loginAsNick(savedNick,savedPhone);}
+  if(savedPhone&&savedNick){
+    loginAsNick(savedNick,savedPhone);
+  } else {
+    // нет сохранённой сессии — прячем сплэш, иначе он навсегда закроет экран логина
+    var o=document.getElementById('splashOverlay');
+    if(o) setTimeout(function(){_hideSplash(o);}, 400);
+  }
 })();
 
 function logout(){
