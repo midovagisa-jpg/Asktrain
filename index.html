@@ -510,6 +510,9 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .theme-ocean .bottom-glow-strip{background:linear-gradient(90deg,#0088ff,#00ccff,#0088ff);background-size:200% 100%;box-shadow:0 0 12px 2px #0088ffaa,0 0 24px 4px #00ccff66;}
 .theme-forest .bottom-glow-strip{background:linear-gradient(90deg,#00cc88,#00ff55,#00cc88);background-size:200% 100%;box-shadow:0 0 12px 2px #00cc88aa,0 0 24px 4px #00ff5566;}
 .theme-sunset .bottom-glow-strip{background:linear-gradient(90deg,#ff8800,#ff0055,#ff8800);background-size:200% 100%;box-shadow:0 0 12px 2px #ff8800aa,0 0 24px 4px #ff005566;}
+.theme-lava .bottom-glow-strip{background:linear-gradient(90deg,#ff3300,#ff8800,#ff3300);background-size:200% 100%;box-shadow:0 0 12px 2px #ff3300aa,0 0 24px 4px #ff880066;}
+.theme-sakura .bottom-glow-strip{background:linear-gradient(90deg,#ff9ecb,#ffffff,#ff9ecb);background-size:200% 100%;box-shadow:0 0 12px 2px #ff9ecbaa,0 0 24px 4px #ffffff66;}
+.theme-ice .bottom-glow-strip{background:linear-gradient(90deg,#66d9ff,#ffffff,#66d9ff);background-size:200% 100%;box-shadow:0 0 12px 2px #66d9ffaa,0 0 24px 4px #ffffff66;}
 
 .screen{display:none;position:absolute;inset:0;flex-direction:column;background:transparent;z-index:1;transition:transform 0.26s cubic-bezier(0.4,0,0.2,1),opacity 0.22s ease;}
 .screen.active{display:flex;z-index:2;}
@@ -553,6 +556,9 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .theme-ocean .profile-av-glow{background:conic-gradient(from 0deg,#0088ff,#00ccff,#0088ff);}
 .theme-forest .profile-av-glow{background:conic-gradient(from 0deg,#00cc88,#00ff55,#00cc88);}
 .theme-sunset .profile-av-glow{background:conic-gradient(from 0deg,#ff8800,#ff0055,#ff8800);}
+.theme-lava .profile-av-glow{background:conic-gradient(from 0deg,#ff3300,#ff8800,#ff3300);}
+.theme-sakura .profile-av-glow{background:conic-gradient(from 0deg,#ff9ecb,#ffffff,#ff9ecb);}
+.theme-ice .profile-av-glow{background:conic-gradient(from 0deg,#66d9ff,#ffffff,#66d9ff);}
 
 /* ===== MESSAGE ANIMATIONS ===== */
 .msg-group{display:flex;flex-direction:column;animation:msgIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;}
@@ -1235,42 +1241,71 @@ function openModal(title,body){document.getElementById('modalTitle').textContent
 
 // ICON (removed - now using inline emoji icon)
 
-// ===== THEME SYSTEM =====
+// ===== THEME SYSTEM (rewritten) =====
+const THEME_LIST=['default','ocean','forest','sunset','lava','sakura','ice','royal'];
 const themeColors={
   default:{g1:'#9b00ff',g2:'#ff0055',glow1:'#9b00ffaa',glow2:'#ff005566'},
   ocean:{g1:'#0088ff',g2:'#00ccff',glow1:'#0088ffaa',glow2:'#00ccff66'},
   forest:{g1:'#00cc88',g2:'#00ff55',glow1:'#00cc88aa',glow2:'#00ff5566'},
   sunset:{g1:'#ff8800',g2:'#ff0055',glow1:'#ff8800aa',glow2:'#ff005566'},
+  lava:{g1:'#ff3300',g2:'#ff8800',glow1:'#ff3300aa',glow2:'#ff880066'},
+  sakura:{g1:'#ff9ecb',g2:'#ffffff',glow1:'#ff9ecbaa',glow2:'#ffffff66'},
+  ice:{g1:'#66d9ff',g2:'#ffffff',glow1:'#66d9ffaa',glow2:'#ffffff66'},
   royal:{g1:'#ffd700',g2:'#ff8c00',glow1:'#ffd700cc',glow2:'#ff8c0088'}
 };
+const themeOrbs={
+  default:{o1:'radial-gradient(circle,#9b00ff88,#ff005544)',o2:'radial-gradient(circle,#ff005566,#9b00ff44)',o3:'radial-gradient(circle,#cc0088aa,#5500ff44)',bg:'#0d0010'},
+  ocean:{o1:'radial-gradient(circle,#0088ff88,#00ccff44)',o2:'radial-gradient(circle,#00ccff66,#0044ff44)',o3:'radial-gradient(circle,#0066ccaa,#00aaffaa)',bg:'#00071a'},
+  forest:{o1:'radial-gradient(circle,#00cc8888,#00ff5544)',o2:'radial-gradient(circle,#00ff5566,#00aa4444)',o3:'radial-gradient(circle,#00aa66aa,#004422aa)',bg:'#001a08'},
+  sunset:{o1:'radial-gradient(circle,#ff880088,#ff005544)',o2:'radial-gradient(circle,#ff005566,#ff880044)',o3:'radial-gradient(circle,#ff6600aa,#aa002244)',bg:'#1a0500'},
+  lava:{o1:'radial-gradient(circle,#ff330088,#ff880044)',o2:'radial-gradient(circle,#ff550066,#ff220044)',o3:'radial-gradient(circle,#cc1100aa,#ff660044)',bg:'#1a0500'},
+  sakura:{o1:'radial-gradient(circle,#ff9ecb88,#ffffff44)',o2:'radial-gradient(circle,#ffc6e066,#ff9ecb44)',o3:'radial-gradient(circle,#ffd6eaaa,#ffffff44)',bg:'#1a0d14'},
+  ice:{o1:'radial-gradient(circle,#66d9ff88,#ffffff44)',o2:'radial-gradient(circle,#99e6ff66,#66d9ff44)',o3:'radial-gradient(circle,#cceeffaa,#ffffff44)',bg:'#00131a'},
+  royal:{o1:'radial-gradient(circle,#ffd70088,#ff8c0044)',o2:'radial-gradient(circle,#ffaa0066,#ffd70044)',o3:'radial-gradient(circle,#ff6600aa,#ffcc0044)',bg:'#1a1000'}
+};
 function applyTheme(th){
-  document.body.className=th!=='default'?'theme-'+th:'';
-  const tc=themeColors[th]||themeColors.default;
-  document.documentElement.style.setProperty('--theme-g1',tc.g1);
-  document.documentElement.style.setProperty('--theme-g2',tc.g2);
-  const strip=document.getElementById('glowStrip');
-  if(strip){strip.style.background=`linear-gradient(90deg,${tc.g1},${tc.g2},${tc.g1})`;strip.style.backgroundSize='200% 100%';strip.style.boxShadow=`0 0 12px 2px ${tc.glow1},0 0 24px 4px ${tc.glow2}`;}
-  document.querySelectorAll('.profile-av-glow').forEach(el=>{el.style.background=`conic-gradient(from 0deg,${tc.g1},${tc.g2},${tc.g1})`;});
-  // Apply full bg orb colors
-  const orb1=document.querySelector('.bg-orb1');
-  const orb2=document.querySelector('.bg-orb2');
-  const orb3=document.querySelector('.bg-orb3');
-  const themeOrbs={
-    default:{o1:'radial-gradient(circle,#9b00ff88,#ff005544)',o2:'radial-gradient(circle,#ff005566,#9b00ff44)',o3:'radial-gradient(circle,#cc0088aa,#5500ff44)',bg:'#0d0010'},
-    ocean:{o1:'radial-gradient(circle,#0088ff88,#00ccff44)',o2:'radial-gradient(circle,#00ccff66,#0044ff44)',o3:'radial-gradient(circle,#0066ccaa,#00aaffaa)',bg:'#00071a'},
-    forest:{o1:'radial-gradient(circle,#00cc8888,#00ff5544)',o2:'radial-gradient(circle,#00ff5566,#00aa4444)',o3:'radial-gradient(circle,#00aa66aa,#004422aa)',bg:'#001a08'},
-    sunset:{o1:'radial-gradient(circle,#ff880088,#ff005544)',o2:'radial-gradient(circle,#ff005566,#ff880044)',o3:'radial-gradient(circle,#ff6600aa,#aa002244)',bg:'#1a0500'},
-    royal:{o1:'radial-gradient(circle,#ffd70088,#ff8c0044)',o2:'radial-gradient(circle,#ffaa0066,#ffd70044)',o3:'radial-gradient(circle,#ff6600aa,#ffcc0044)',bg:'#1a1000'}
-  };
-  const ob=themeOrbs[th]||themeOrbs.default;
-  if(orb1)orb1.style.background=ob.o1;
-  if(orb2)orb2.style.background=ob.o2;
-  if(orb3)orb3.style.background=ob.o3;
-  document.body.style.background=ob.bg;
-  // Apply gradient colors to buttons and accents
-  var _ds=document.getElementById('_dynTheme');if(!_ds){_ds=document.createElement('style');_ds.id='_dynTheme';document.head.appendChild(_ds);}_ds.textContent='.btn,.send-btn,.game-btn,.small-btn,.small-send{background:linear-gradient(135deg,'+tc.g1+','+tc.g2+')!important;}.msg-group.mine .bubble{background:linear-gradient(135deg,'+tc.g1+'aa,'+tc.g2+'aa)!important;}';
+  try{
+    if(!themeColors[th])th='default';
+    document.body.className=th!=='default'?'theme-'+th:'';
+    const tc=themeColors[th];
+    document.documentElement.style.setProperty('--theme-g1',tc.g1);
+    document.documentElement.style.setProperty('--theme-g2',tc.g2);
+    const strip=document.getElementById('glowStrip');
+    if(strip){strip.style.background=`linear-gradient(90deg,${tc.g1},${tc.g2},${tc.g1})`;strip.style.backgroundSize='200% 100%';strip.style.boxShadow=`0 0 12px 2px ${tc.glow1},0 0 24px 4px ${tc.glow2}`;}
+    document.querySelectorAll('.profile-av-glow').forEach(el=>{el.style.background=`conic-gradient(from 0deg,${tc.g1},${tc.g2},${tc.g1})`;});
+    const orb1=document.querySelector('.bg-orb1');
+    const orb2=document.querySelector('.bg-orb2');
+    const orb3=document.querySelector('.bg-orb3');
+    const ob=themeOrbs[th]||themeOrbs.default;
+    if(orb1)orb1.style.background=ob.o1;
+    if(orb2)orb2.style.background=ob.o2;
+    if(orb3)orb3.style.background=ob.o3;
+    document.body.style.background=ob.bg;
+    var _ds=document.getElementById('_dynTheme');
+    if(!_ds){_ds=document.createElement('style');_ds.id='_dynTheme';document.head.appendChild(_ds);}
+    _ds.textContent='.btn,.send-btn,.game-btn,.small-btn,.small-send{background:linear-gradient(135deg,'+tc.g1+','+tc.g2+')!important;}.msg-group.mine .bubble{background:linear-gradient(135deg,'+tc.g1+'aa,'+tc.g2+'aa)!important;}';
+  }catch(e){console.error('[theme] applyTheme failed:',e);}
 }
-window.setTheme=(th,el)=>{document.querySelectorAll('.theme-opt').forEach(o=>o.classList.remove('selected'));el.classList.add('selected');localStorage.setItem('fct',th);applyTheme(th);}
+window.setTheme=function(th,el){
+  try{
+    document.querySelectorAll('.theme-opt').forEach(o=>o.classList.remove('selected'));
+    if(el)el.classList.add('selected');
+    localStorage.setItem('fct',th);
+    applyTheme(th);
+  }catch(e){console.error('[theme] setTheme failed:',e);}
+};
+// Обработка кликов по опциям темы через делегирование — надёжнее инлайновых onclick с вложенными кавычками
+document.addEventListener('click',function(e){
+  const opt=e.target.closest && e.target.closest('.theme-opt');
+  if(!opt)return;
+  const th=opt.getAttribute('data-theme');
+  if(!th)return;
+  if(opt.classList.contains('locked-theme')){
+    alert('👑 Тема Gold доступна только с Premium подпиской!');
+    return;
+  }
+  setTheme(th,opt);
+});
 
 // ===== PARTICLES =====
 const pCanvas=document.getElementById('particleCanvas');
@@ -3240,12 +3275,13 @@ function renderProfile(){
       </div>
       <div class="profile-section">
         <div class="profile-section-title">🎨 Тема</div>
-        ${['default','ocean','forest','sunset','royal'].map(th2=>{
+        ${THEME_LIST.map(th2=>{
           const hasSub=!!window._myPremium;
-          const names={default:'Фиолетовый',ocean:'Океан',forest:'Лес',sunset:'Закат',royal:'👑 Золотой (Premium)'};
-          const grads={default:'#9b00ff,#ff0055',ocean:'#0088ff,#00ccff',forest:'#00cc88,#00ff55',sunset:'#ff8800,#ff0055',royal:'#ffd700,#ff8c00'};
+          const names={default:'Фиолетовый',ocean:'Океан',forest:'Лес',sunset:'Закат',lava:'🔥 Лава',sakura:'🌸 Сакура',ice:'❄️ Лёд',royal:'👑 Золотой (Premium)'};
+          const grads={default:'#9b00ff,#ff0055',ocean:'#0088ff,#00ccff',forest:'#00cc88,#00ff55',sunset:'#ff8800,#ff0055',lava:'#ff3300,#ff8800',sakura:'#ff9ecb,#ffffff',ice:'#66d9ff,#ffffff',royal:'#ffd700,#ff8c00'};
           const cur=localStorage.getItem('fct')||'default';
-          return `<div class="theme-opt ${cur===th2?'selected':''} ${th2==='royal'&&!hasSub?'locked-theme':''}" onclick="${th2==='royal'&&!hasSub?'alert(\'👑 Тема Gold доступна только с Premium подпиской!\')':"setTheme('${th2}',this)"}">
+          const locked=th2==='royal'&&!hasSub;
+          return `<div class="theme-opt ${cur===th2?'selected':''} ${locked?'locked-theme':''}" data-theme="${th2}">
             <div class="theme-preview" style="background:linear-gradient(135deg,${grads[th2]})"></div>
             <div style="font-size:14px;font-weight:600;">${names[th2]}</div>
           </div>`;
