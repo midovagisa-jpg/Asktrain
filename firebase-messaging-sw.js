@@ -130,4 +130,3 @@ self.addEventListener('push', function(event) {
     }
   } catch(e) {}
 });
-

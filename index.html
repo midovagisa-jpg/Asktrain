@@ -2,26 +2,13 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<script>
-(function(){
-  function showErr(msg){
-    var d=document.createElement('div');
-    d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:999999;background:#ff0033;color:#fff;padding:14px;font:13px monospace;white-space:pre-wrap;word-break:break-all;max-height:60vh;overflow:auto;';
-    d.textContent='⚠️ ОШИБКА: '+msg;
-    document.body?document.body.appendChild(d):window.addEventListener('DOMContentLoaded',function(){document.body.appendChild(d);});
-  }
-  window.addEventListener('error',function(e){showErr((e.message||'')+' | файл:'+(e.filename||'?')+' стр:'+(e.lineno||'?'));});
-  window.addEventListener('unhandledrejection',function(e){showErr('Promise rejection: '+(e.reason&&e.reason.message||e.reason));});
-})();
-</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0d0010">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <title>⚡ FitChat</title>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js">
 // ===== COIN FLIP GAME =====
 let coinBet=5,coinFlipping=false;
 function renderCoinFlip(el){
@@ -193,7 +180,7 @@ function loadStoriesBar(){
       var stories=byUser[nick];
       var seenAll=stories.every(function(s){return s.views&&s.views[myNick];});
       var prem=presenceCache[nick]&&presenceCache[nick].premium;
-      html+='<div class="story-item" onclick="viewStories(\''+nick+'\')">'
+      html+='<div class="story-item" onclick="viewStories(''+nick+'')">'
         +'<div class="story-av-wrap has-story'+(seenAll?' seen':'')+(prem?' premium-ring':'')+'">'
         +'<div class="story-av-inner" style="'+avBg(gc(nick),avatarCache[nick])+'">'+avTxt(nick,avatarCache[nick])+'</div>'
         +'</div><div class="story-nick">'+nick+'</div></div>';
@@ -354,7 +341,7 @@ window.giftStarFromStory=function(){
     '<div style="display:flex;flex-direction:column;gap:10px;">'
     +'<div style="font-size:14px;color:rgba(255,255,255,0.6);">Пользователю <b>'+t+'</b></div>'
     +'<input class="inp" id="svGiftAmt" type="number" placeholder="Количество ✶..." min="1">'
-    +'<button class="btn" onclick="sendStoryGift(\''+t+'\')">✶ Подарить</button></div>');
+    +'<button class="btn" onclick="sendStoryGift(''+t+'')">✶ Подарить</button></div>');
 };
 window.sendStoryGift=function(target){
   var amt=parseInt(((document.getElementById('svGiftAmt')||{}).value)||0);
@@ -530,261 +517,6 @@ function pushMessage(toNick, chatId, chatType, text) {
   // Also show in-app toast if app open (for people using other tabs)
   showPushToast('message', myNick, text, chatId, chatType);
 }
-
-
-
-// ===== CHESS ENGINE =====
-var CINIT=['bR','bN','bB','bQ','bK','bB','bN','bR','bP','bP','bP','bP','bP','bP','bP','bP',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'wP','wP','wP','wP','wP','wP','wP','wP','wR','wN','wB','wQ','wK','wB','wN','wR'];
-var CPCS={wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙',bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟'};
-function cRow(i){return i>>3;}function cCol(i){return i&7;}function cIdx(r,c){return r*8+c;}
-function cPs(bd,fr,ep){
-  var p=bd[fr];if(!p)return[];
-  var cl=p[0],tp=p[1],r=cRow(fr),c=cCol(fr),mv=[],en=cl==='w'?'b':'w';
-  function aI(r2,c2){if(r2<0||r2>7||c2<0||c2>7)return;var t=bd[cIdx(r2,c2)];if(!t||t[0]===en)mv.push(cIdx(r2,c2));}
-  function sl(dr,dc){var nr=r+dr,nc=c+dc;while(nr>=0&&nr<=7&&nc>=0&&nc<=7){var t=bd[cIdx(nr,nc)];if(!t){mv.push(cIdx(nr,nc));nr+=dr;nc+=dc;}else{if(t[0]===en)mv.push(cIdx(nr,nc));break;}}}
-  if(tp==='P'){var d=cl==='w'?-1:1,sr=cl==='w'?6:1;
-    if(r+d>=0&&r+d<=7&&!bd[cIdx(r+d,c)]){mv.push(cIdx(r+d,c));if(r===sr&&!bd[cIdx(r+2*d,c)])mv.push(cIdx(r+2*d,c));}
-    [-1,1].forEach(function(x){if(c+x>=0&&c+x<=7){var t=bd[cIdx(r+d,c+x)];if(t&&t[0]===en)mv.push(cIdx(r+d,c+x));if(ep>=0&&ep===cIdx(r+d,c+x))mv.push(cIdx(r+d,c+x));}});
-  }else if(tp==='N'){[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(function(m){aI(r+m[0],c+m[1]);});}
-  else if(tp==='B'){[[-1,-1],[-1,1],[1,-1],[1,1]].forEach(function(m){sl(m[0],m[1]);});}
-  else if(tp==='R'){[[-1,0],[1,0],[0,-1],[0,1]].forEach(function(m){sl(m[0],m[1]);});}
-  else if(tp==='Q'){[[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]].forEach(function(m){sl(m[0],m[1]);});}
-  else if(tp==='K'){[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(function(m){aI(r+m[0],c+m[1]);});}
-  return mv;
-}
-function cChk(bd,cl){var kp=bd.indexOf(cl+'K');if(kp<0)return false;var en=cl==='w'?'b':'w';for(var i=0;i<64;i++)if(bd[i]&&bd[i][0]===en&&cPs(bd,i,-1).indexOf(kp)>=0)return true;return false;}
-function cLegal(bd,fr,turn,ep){
-  var p=bd[fr];if(!p||p[0]!==turn)return[];
-  return cPs(bd,fr,ep).filter(function(to){
-    var nb=bd.slice();nb[to]=bd[fr];nb[fr]=null;
-    if(p[1]==='P'&&to===ep&&ep>=0){var dx=p[0]==='w'?1:-1;nb[to+dx*8]=null;}
-    return !cChk(nb,p[0]);
-  });
-}
-function cHasMv(bd,cl,ep){for(var i=0;i<64;i++)if(bd[i]&&bd[i][0]===cl&&cLegal(bd,i,cl,ep).length>0)return true;return false;}
-function cApply(bd,fr,to,ep){
-  var nb=bd.slice(),p=bd[fr],nep=-1;nb[to]=p;nb[fr]=null;
-  if(p[1]==='P'&&Math.abs(cRow(to)-cRow(fr))===2)nep=(fr+to)>>1;
-  if(p[1]==='P'&&to===ep&&ep>=0){var dx2=p[0]==='w'?1:-1;nb[to+dx2*8]=null;}
-  if(p==='wP'&&cRow(to)===0)nb[to]='wQ';
-  if(p==='bP'&&cRow(to)===7)nb[to]='bQ';
-  return{board:nb,ep:nep};
-}
-// ===== CHESS UI STATE =====
-var chGId=null,chMyCl=null,chGRef=null,chGCb=null;
-var chBd=null,chTurn='w',chEP=-1,chGS='active';
-var chSel=null,chVM=[],chLF=-1,chLT=-1,chWn='',chBn='';
-window.closeChessOv=function(){document.getElementById('chessOv').classList.remove('open');document.body.style.overflow='';};
-function openChOv(){document.getElementById('chessOv').classList.add('open');document.body.style.overflow='hidden';}
-function renderCB(){
-  var bd=document.getElementById('chBoard');if(!bd||!chBd)return;
-  var flip=chMyCl==='b',h='';
-  var sz='calc(min(calc(100vw - 12px),calc(100vh - 210px),440px)/8*0.76)';
-  for(var row=0;row<8;row++){for(var col=0;col<8;col++){
-    var r=flip?7-row:row,c=flip?7-col:col,idx=cIdx(r,c);
-    var cls='cc '+((r+c)%2===0?'lt':'dk');
-    if(chSel===idx)cls+=' sel';else if(chLF===idx||chLT===idx)cls+=' lm';
-    var iv=chVM.indexOf(idx)>=0;if(iv)cls+=' vm'+(chBd[idx]?' occ':'');
-    var pc=chBd[idx]?('<span class="cp" style="font-size:'+sz+'">'+CPCS[chBd[idx]]+'</span>'):'';
-    h+='<div class="'+cls+'" onclick="chClick('+idx+')">'+pc+'</div>';
-  }}
-  bd.innerHTML=h;
-  var tl=document.getElementById('chTL');
-  if(tl)tl.textContent=chTurn==='w'?'Ход белых':'Ход чёрных';
-  var bw=document.getElementById('chBW'),bb=document.getElementById('chBB');
-  if(bw)bw.classList.toggle('active',chTurn==='w');
-  if(bb)bb.classList.toggle('active',chTurn==='b');
-}
-window.chClick=function(idx){
-  if(chGS!=='active')return;
-  var mt=(chTurn==='w'&&chMyCl==='w')||(chTurn==='b'&&chMyCl==='b');
-  if(!mt)return;
-  if(chSel!==null&&chVM.indexOf(idx)>=0){
-    var res=cApply(chBd,chSel,idx,chEP),nb=res.board,nep=res.ep;
-    var nt=chTurn==='w'?'b':'w',ns='active';
-    if(!cHasMv(nb,nt,nep))ns=cChk(nb,nt)?'checkmate':'stalemate';
-    db.ref('chess_games/'+chGId).update({board:nb,turn:nt,ep:nep,status:ns,lastFrom:chSel,lastTo:idx,winner:ns==='checkmate'?(chTurn==='w'?'white':'black'):null});
-    chSel=null;chVM=[];
-    if(ns!=='active')resolveChess(chGId,ns);
-    return;
-  }
-  var p=chBd[idx];
-  if(p&&p[0]===chTurn&&mt){chSel=idx;chVM=cLegal(chBd,idx,chTurn,chEP);}
-  else{chSel=null;chVM=[];}
-  renderCB();
-};
-function updateBetRow(g){
-  var br=document.getElementById('chBetRow');if(!br)return;
-  var bets=g.bets||{},pW=0,pB=0;
-  Object.keys(bets).forEach(function(n){var b=bets[n];if(b.player==='white')pW+=b.amount;else pB+=b.amount;});
-  var mb=bets[myNick];
-  if(chGS==='active'){
-    if(mb){br.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,0.6);">✦ Ставка: '+(mb.player==='white'?'♔':'♚')+' '+mb.amount+'✦ | Банк: ♔'+pW+' vs ♚'+pB+'</span>';}
-    else if(myNick!==g.white&&myNick!==g.black){
-      br.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,0.4);">Банк: ♔'+pW+' vs ♚'+pB+'</span>'
-        +'<button class="ch-btn" onclick="chBet(\'white\')">✦ За белых</button>'
-        +'<button class="ch-btn" onclick="chBet(\'black\')">✦ За чёрных</button>';
-    }else{br.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,0.3);">Банк: ♔'+pW+' vs ♚'+pB+'</span>';}
-  }else{br.innerHTML='';}
-}
-function listenChG(gid){
-  if(chGRef&&chGCb)chGRef.off('value',chGCb);
-  chGRef=db.ref('chess_games/'+gid);
-  chGCb=function(snap){
-    var g=snap.val();if(!g)return;
-    chBd=g.board||CINIT.slice();chTurn=g.turn||'w';chEP=g.ep!=null?g.ep:-1;
-    chGS=g.status||'active';chLF=g.lastFrom!=null?g.lastFrom:-1;chLT=g.lastTo!=null?g.lastTo:-1;
-    chWn=g.white||'';chBn=g.black||'';
-    var avSt='width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;background-size:cover;background-position:center;';
-    var aW=document.getElementById('chAvW'),aB=document.getElementById('chAvB');
-    if(aW){aW.setAttribute('style',avSt+avBg(gc(g.white),avatarCache[g.white]));aW.textContent=avTxt(g.white,avatarCache[g.white]);}
-    if(aB){aB.setAttribute('style',avSt+avBg(gc(g.black),avatarCache[g.black]));aB.textContent=avTxt(g.black,avatarCache[g.black]);}
-    var nW=document.getElementById('chNW'),nB=document.getElementById('chNB');
-    if(nW)nW.textContent='♔ '+g.white;if(nB)nB.textContent='♚ '+g.black;
-    var rb=document.getElementById('chRB');if(rb)rb.style.display=(chMyCl==='w'||chMyCl==='b')?'block':'none';
-    var sp=document.getElementById('chSpec');
-    if(sp){var specs=Object.keys(g.spectators||{}).filter(function(s){return s!==g.white&&s!==g.black;});sp.textContent=specs.length?('👀 Зрители: '+specs.join(', ')):'';};
-    updateBetRow(g);
-    var st=document.getElementById('chStatus');
-    if(st){
-      if(g.status==='checkmate')st.textContent=(g.winner==='white'?g.white:g.black)+' победил! 👑';
-      else if(g.status==='stalemate')st.textContent='Ничья! (пат)';
-      else if(g.status==='resigned')st.textContent=(g.winner==='white'?g.white:g.black)+' победил (сдача)!';
-      else if(cChk(chBd,chTurn))st.textContent='Шах! Ход '+(chTurn==='w'?'белых':'чёрных');
-      else st.textContent='Ход: '+(chTurn==='w'?g.white:g.black);
-    }
-    renderCB();
-  };
-  chGRef.on('value',chGCb);
-  db.ref('chess_games/'+gid+'/spectators/'+myNick).set(true);
-}
-window.chBet=function(side){
-  openModal('✦ Ставка на игрока',
-    '<div style="display:flex;flex-direction:column;gap:12px;">'
-    +'<div style="font-size:14px;color:rgba(255,255,255,0.6);">Ставлю за: <b>'+(side==='white'?'♔ '+chWn:'♚ '+chBn)+'</b></div>'
-    +'<input class="inp" id="chBA" type="number" placeholder="Кол-во ✦..." min="1" max="500">'
-    +'<button class="btn" onclick="chBetOk(\''+side+'\')">✦ Поставить</button></div>');
-};
-window.chBetOk=function(side){
-  var el=document.getElementById('chBA');
-  var amt=el?parseInt(el.value||'0'):0;
-  if(!amt||amt<1){alert('Минимум 1 звезда');return;}
-  db.ref('users/'+myNick+'/stars').once('value').then(function(s){
-    var cur=s.val()||0;if(cur<amt){alert('Недостаточно звёзд!');return;}
-    db.ref('users/'+myNick+'/stars').set(cur-amt);
-    db.ref('chess_games/'+chGId+'/bets/'+myNick).set({player:side,amount:amt,ts:Date.now()});
-    closeModal();alert('✦ Ставка '+amt+' принята!');
-  });
-};
-function resolveChess(gid){
-  db.ref('chess_games/'+gid).once('value').then(function(snap){
-    var g=snap.val();if(!g||g._res)return;
-    db.ref('chess_games/'+gid+'/_res').set(true);
-    var win=g.winner,wN=g.white,bN=g.black,rw=5+Math.floor(Math.random()*6);
-    function addSt(n,a){db.ref('users/'+n+'/stars').once('value').then(function(s){db.ref('users/'+n+'/stars').set((s.val()||0)+a);});}
-    if(win==='white'){addSt(wN,rw);addSt(bN,Math.floor(rw/2));}
-    else if(win==='black'){addSt(bN,rw);addSt(wN,Math.floor(rw/2));}
-    else{addSt(wN,3);addSt(bN,3);}
-    var bets=g.bets||{},pW2=0,pB2=0;
-    Object.keys(bets).forEach(function(n){var b=bets[n];if(b.player==='white')pW2+=b.amount;else pB2+=b.amount;});
-    if(win){
-      var wp=win==='white'?pW2:pB2,lp=win==='white'?pB2:pW2;
-      Object.keys(bets).forEach(function(n){
-        var b=bets[n];
-        if(b.player===win)addSt(n,b.amount+(wp>0?Math.floor(b.amount/wp*lp):0));
-      });
-    }
-    if(g.chatId){
-      var rt=win?(win==='white'?wN:bN)+' победил в шахматах! 👑 +'+rw+' ✦':'Ничья в шахматах!';
-      var pt=g.chatType==='group'?'groups/'+g.chatId+'/messages':'dms/'+g.chatId+'/messages';
-      db.ref(pt).push({nick:'FitBot',text:rt,ts:Date.now()});
-    }
-  });
-}
-window.resignCh=function(){
-  if(!chGId||!chMyCl)return;
-  if(!confirm('Сдаться?'))return;
-  var w2=chMyCl==='w'?'black':'white';
-  db.ref('chess_games/'+chGId).update({status:'resigned',winner:w2});
-  resolveChess(chGId);
-};
-var chQR=null,chQC=null;
-function startChMatch(me,opp,cid,ct){
-  var gid=[me,opp].sort().join('_')+'_'+Date.now(),wh=Math.random()<0.5?me:opp,bl=wh===me?opp:me;
-  db.ref('chess_games/'+gid).set({white:wh,black:bl,turn:'w',board:CINIT.slice(),ep:-1,status:'active',winner:null,chatId:cid,chatType:ct,spectators:{},bets:{},lastFrom:-1,lastTo:-1,ts:Date.now()});
-  db.ref('chess_queue/'+me).remove();db.ref('chess_queue/'+opp).remove();
-  var pt2=ct==='group'?'groups/'+cid+'/messages':'dms/'+cid+'/messages';
-  db.ref(pt2).push({nick:'FitBot',chessGame:{id:gid,white:wh,black:bl},text:'♟️ Шахматный матч! ♔ '+wh+' vs ♚ '+bl,ts:Date.now()});
-  chGId=gid;chMyCl=me===wh?'w':'b';
-  listenChG(gid);openChOv();
-  sendPush(opp,{type:'message',from:'FitBot',text:'♟️ Шахматы: '+wh+' vs '+bl,chatId:cid,chatType:ct});
-}
-window.openChessQ=function(){
-  var ci=curChat,ct=curType;if(!ci){alert('Открой чат или группу');return;}
-  if(chQR&&chQC){chQR.off('value',chQC);chQR=null;}
-  db.ref('chess_queue').once('value').then(function(snap){
-    var q=snap.val()||{},ops=Object.keys(q).filter(function(n){return n!==myNick&&q[n].chatId===ci;});
-    if(ops.length>0){startChMatch(myNick,ops[0],ci,ct);}
-    else{
-      db.ref('chess_queue/'+myNick).set({chatId:ci,chatType:ct,ts:Date.now()});
-      showToast('♟️ Ищем соперника…');
-      chQR=db.ref('chess_queue');
-      chQC=function(qs){
-        var qv=qs.val()||{};if(!qv[myNick])return;
-        var ops2=Object.keys(qv).filter(function(n){return n!==myNick&&qv[n].chatId===ci;});
-        if(ops2.length>0){if(chQR)chQR.off('value',chQC);startChMatch(myNick,ops2[0],ci,ct);}
-      };
-      chQR.on('value',chQC);
-    }
-  });
-};
-window.openChessGame=function(gid){
-  db.ref('chess_games/'+gid).once('value').then(function(snap){
-    var g=snap.val();if(!g)return;
-    chGId=gid;chMyCl=myNick===g.white?'w':(myNick===g.black?'b':null);
-    listenChG(gid);openChOv();
-  });
-};
-// ===== FITBOT =====
-var FBPAT=[
-  [/привет|здравствуй|хай|hi\b|hello/i,function(){return '🤖 Привет! Я FitBot — AI-ассистент. Спроси про шахматы, звёзды или Premium!';}],
-  [/шахмат|сыграть|chess/i,function(){return '♟️ Нажми ♟️ в любом чате — и начни игру!';}],
-  [/звёзд|звезд|star/i,function(){return '✦ Победа в шахматах = 5-10 ✦. Бетторы делят банк проигравших!';}],
-  [/premium|премиум|подписк/i,function(){return '👑 Premium: золотая аватарка, 20 историй, Royal тема. Купи в Shop!';}],
-  [/ставк|бет|bet/i,function(){return '✦ Нажми "✦ За белых/чёрных" в шахматной игре чтобы поставить!';}],
-  [/совет|помог|как/i,function(){var t=['💪 Тренируйся регулярно!','🥗 Больше белка!','💧 2 литра воды в день!','😴 8 часов сна!'];return t[0|Math.random()*t.length];}],
-  [/мотив|лень|устал/i,function(){var m=['🔥 Каждая тренировка приближает к цели!','⚡ Ты уже начал!'];return m[0|Math.random()*m.length];}],
-  [/спасибо|thanks/i,function(){return '🤗 Всегда пожалуйста!';}],
-];
-function fitBotR(txt){
-  for(var i=0;i<FBPAT.length;i++)if(FBPAT[i][0].test(txt))return FBPAT[i][1]();
-  var d=['🤔 Спроси про шахматы, звёзды или Premium!','😄 Чем могу помочь?','⚡ FitChat — лучший мессенджер! 🤖'];
-  return d[0|Math.random()*d.length];
-}
-function startFitBotL(){
-  var bdi=[myNick,'FitBot'].sort().join('_');
-  db.ref('dms/'+bdi+'/messages').limitToLast(1).on('value',function(snap){
-    snap.forEach(function(s){
-      var m=s.val();if(!m||m.nick!==myNick||m._br)return;
-      db.ref('dms/'+bdi+'/messages/'+s.key+'/_br').set(true);
-      setTimeout(function(){
-        var r2=fitBotR(m.text||'');
-        db.ref('dms/'+bdi+'/messages').push({nick:'FitBot',text:r2,ts:Date.now()});
-        var upd={lastMsg:r2.substring(0,40),lastTs:Date.now(),lastNick:'FitBot'};
-        upd['members/'+myNick]=true;upd['members/FitBot']=true;
-        db.ref('dms/'+bdi).update(upd);
-      },800+Math.random()*700);
-    });
-  });
-}
-window.openFitBot=function(){
-  var bdi=[myNick,'FitBot'].sort().join('_');
-  var upd={type:'dm',lastMsg:'🤖 FitBot готов!',lastTs:Date.now()};
-  upd['members/'+myNick]=true;upd['members/FitBot']=true;
-  db.ref('dms/'+bdi).update(upd);
-  openChat(bdi,'dm','FitBot',gc('FitBot'));
-};
-
 </script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
@@ -1198,23 +930,6 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
 .ch-badge{flex:1;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);min-width:0;}
 .ch-badge.active{background:rgba(155,0,255,0.18);border-color:rgba(155,0,255,0.5);}
 .ch-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;background-size:cover;background-position:center;}
-.ch-board-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:4px;}
-.ch-board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;width:min(calc(100vw - 12px),calc(100vh - 210px),440px);}
-.cc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
-.cc.lt{background:#f0d9b5;}.cc.dk{background:#b58863;}
-.cc.sel{background:#7fc97f!important;}.cc.lm{background:#cdd26a!important;}
-.cc.vm::after{content:'';position:absolute;width:32%;height:32%;border-radius:50%;background:rgba(0,0,0,0.22);pointer-events:none;}
-.cc.vm.occ{box-shadow:inset 0 0 0 4px rgba(0,0,0,0.28);}
-.cp{line-height:1;user-select:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));}
-.ch-status{font-size:13px;font-weight:600;text-align:center;padding:7px;border-radius:10px;background:rgba(255,255,255,0.07);margin:4px 12px;}
-.ch-bet-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:2px 12px 6px;justify-content:center;}
-.ch-btn{padding:7px 12px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:rgba(255,255,255,0.12);}
-.ch-spec{font-size:11px;color:rgba(255,255,255,0.4);padding:0 12px 6px;text-align:center;}
-.ch-msg{background:linear-gradient(135deg,rgba(30,0,50,0.9),rgba(50,0,80,0.9));border:1px solid rgba(155,0,255,0.3);border-radius:14px;padding:12px 14px;margin:4px 0;display:flex;flex-direction:column;gap:8px;}
-.ch-msg-btns{display:flex;gap:8px;flex-wrap:wrap;}
-.ch-msg-btn{padding:7px 13px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:rgba(255,255,255,0.12);}
-.ch-msg-btn.go{background:linear-gradient(135deg,#9b00ff,#ff0055);}
-
 </style>
   <link rel="icon" href="icon-192.png" sizes="192x192">
   <link rel="icon" href="favicon-32.png" sizes="32x32">
@@ -1395,7 +1110,6 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
   </div>
   <div class="chat-input-bar">
     <div class="attach-btn" id="attachBtn" onclick="document.getElementById('chatFileInp').click()">📎</div>
-    <div class="attach-btn" id="chessBtn" onclick="openChessQ()" title="♟️" style="display:none;">♟️</div>
     <input type="file" id="chatFileInp" accept="image/*,video/*" style="display:none;" onchange="handleChatFile(this)">
     <textarea class="chat-inp" id="chatInp" placeholder="Сообщение..." rows="1" oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
     <div class="round-rec-btn" onclick="openRoundRecorder('chat')" title="Видео-кружок">⭕</div>
@@ -1787,7 +1501,6 @@ function ensureFounderChat(){
 (()=>{
   const savedPhone=localStorage.getItem('fphone'),savedNick=localStorage.getItem('fn');
   if(savedPhone&&savedNick){loginAsNick(savedNick,savedPhone);}
-  else{var o=document.getElementById('splashOverlay');if(o)_hideSplash(o);}
 })();
 
 function logout(){
@@ -2015,7 +1728,7 @@ function renderReactions(chatId,type,msgId,m){
 }
 
 function bubbleHtmlFor(msgId,m){
-  if(m.chessGame){var cg=m.chessGame,isP=(myNick===cg.white||myNick===cg.black);return '<div class="ch-msg"><div style="font-size:14px;font-weight:700;">♟️ Шахматный матч!</div><div style="font-size:13px;color:rgba(255,255,255,0.8);">♔ '+cg.white+' vs ♚ '+cg.black+'</div><div class="ch-msg-btns">'+(isP?'<button class="ch-msg-btn go" onclick="openChessGame(\''+cg.id+'\')">&#x25B6; Открыть</button>':'')+'<button class="ch-msg-btn" onclick="openChessGame(\''+cg.id+'\')">Просмотреть</button></div></div>';}
+
     if(m.missedCall){
     const isVideo=m.callType==='video';
     return `<div class="missed-call-bubble">${isVideo?'🎥':'📵'} Пропущенный ${isVideo?'видеозвонок':'аудиозвонок'}<span class="mc-callback" onclick="startCall('${m.callType||'audio'}')">↩️</span></div>`;
@@ -2182,8 +1895,7 @@ window.showBadge=function(tabs){
 }
 window.clearBadge=function(tabs){tabs.forEach(id=>{const el=document.getElementById(id);if(el)el.querySelectorAll('.nav-badge').forEach(b=>b.remove());});}
 
-window.startListeners=function(){loadPinned();db.ref('users/'+myNick+'/avatar').once('value').then(av=>{if(av.val())avatarCache[myNick]=av.val();});cleanOldStories();setTimeout(loadStoriesBar,700);initFCM();startFitBotL();
-  watchIncomingCalls();
+window.startListeners=function(){loadPinned();db.ref('users/'+myNick+'/avatar').once('value').then(av=>{if(av.val())avatarCache[myNick]=av.val();});cleanOldStories();setTimeout(loadStoriesBar,700);initFCM();watchIncomingCalls();
   // New posts badge (only others' posts)
   db.ref('posts').orderByChild('ts').limitToLast(1).on('child_added',snap=>{
     if(snap.val()&&snap.val().nick!==myNick){showBadge(['nb2','nb6','nb10','nb14','nbS2']);}
@@ -4525,19 +4237,5 @@ window.applyAppUpdate=function(){
   <button class="push-toast-close" onclick="event.stopPropagation();hidePushToast()">&#x2715;</button>
 </div>
 
-
-<div class="chess-ov" id="chessOv">
-  <div class="chess-top">
-    <div class="ch-badge" id="chBW"><div class="ch-av" id="chAvW"></div><div id="chNW" style="font-size:12px;font-weight:700;">&#x2654; &#x2013;</div></div>
-    <div id="chTL" style="font-size:11px;color:rgba(255,255,255,0.4);padding:0 4px;flex-shrink:0;">&#x425;&#x43e;&#x434; &#x431;&#x435;&#x43b;&#x44b;&#x445;</div>
-    <div class="ch-badge" id="chBB"><div class="ch-av" id="chAvB"></div><div id="chNB" style="font-size:12px;font-weight:700;">&#x265a; &#x2013;</div></div>
-    <button class="ch-btn" id="chRB" onclick="resignCh()" style="background:rgba(255,80,80,0.2);display:none;padding:6px 10px;">&#x1F3F3;</button>
-    <button class="ch-btn" onclick="closeChessOv()" style="padding:6px 10px;">&#x2715;</button>
-  </div>
-  <div class="ch-board-wrap"><div class="ch-board" id="chBoard"></div></div>
-  <div class="ch-status" id="chStatus">&#x418;&#x434;&#x451;&#x442; &#x438;&#x433;&#x440;&#x430;&#x2026;</div>
-  <div class="ch-bet-row" id="chBetRow"></div>
-  <div class="ch-spec" id="chSpec"></div>
-</div>
 </body>
 </html>
