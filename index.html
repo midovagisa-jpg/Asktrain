@@ -113,41 +113,7 @@ function renderGameLeaderboard(game,container,labelFn){
 }
 
 
-// ===== SPLASH =====
-function showSplash(isPrem) {
-  var o=document.getElementById('splashOverlay');
-  var lb=document.getElementById('splashLogoBox');
-  var tt=document.getElementById('splashTitle');
-  var sb=document.getElementById('splashSub');
-  var im=document.getElementById('splashImg');
-  if(!o) return;
-  if(isPrem){
-    o.style.background='linear-gradient(160deg,#130800,#2a1500,#130800)';
-    lb.classList.add('premium'); tt.classList.add('premium'); sb.classList.add('premium');
-    sb.textContent='✶ Premium Edition ✶';
-    im.src='data:image/svg+xml,%3Csvg xmlns%3D"http%3A//www.w3.org/2000/svg" viewBox%3D"0 0 100 100"%3E%3Crect width%3D"100" height%3D"100" rx%3D"22" fill%3D"%23c9920a"/%3E%3Ctext x%3D"50" y%3D"68" font-size%3D"54" text-anchor%3D"middle"%3E👑%3C/text%3E%3C/svg%3E';
-    _sParticles(true);
-    setTimeout(function(){_hideSplash(o);}, 2400);
-  } else {
-    _sParticles(false);
-    setTimeout(function(){_hideSplash(o);}, 1600);
-  }
-}
-function _hideSplash(o){
-  o.classList.add('hidden');
-  setTimeout(function(){o.style.display='none';}, 600);
-}
-function _sParticles(gold){
-  var c=document.getElementById('splashParticles');
-  if(!c) return; c.innerHTML='';
-  var cols=gold?['#ffd700','#ff8c00','#fff8dc','#ffb300']:['#9b00ff','#ff0055','#d87bff','#ff6b9d'];
-  for(var i=0;i<24;i++){
-    var p=document.createElement('div'); p.className='splash-particle';
-    var sz=5+Math.random()*14;
-    p.style.cssText='width:'+sz+'px;height:'+sz+'px;background:'+cols[i%cols.length]+';left:'+Math.round(Math.random()*100)+'%;bottom:-30px;animation-delay:'+(Math.random()*1.8).toFixed(2)+'s;animation-duration:'+(1.8+Math.random()*1.8).toFixed(2)+'s;opacity:0.75;';
-    c.appendChild(p);
-  }
-}
+
 // ===== STORIES =====
 var MAX_STORIES_FREE=5,STORY_DUR=5000;
 var svStories=[],svIdx=0,svNick='',svTimer=null,svHeld=false,svFillEl=null,svFillRaf=null,svFillStart=0,svFillDur=0;
@@ -895,24 +861,6 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
 /* ===== PREMIUM RING ===== */
 .av-premium{box-shadow:0 0 0 2.5px #ffd700,0 0 12px 4px rgba(255,215,0,0.5)!important;}
 @keyframes premRing{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-/* ===== SPLASH ===== */
-.splash-overlay{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:all;transition:opacity 0.55s ease;}
-.splash-overlay.hidden{opacity:0;pointer-events:none;}
-.splash-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
-.splash-particle{position:absolute;border-radius:50%;animation:floatP 3s ease infinite;}
-@keyframes floatP{0%{opacity:0;transform:translateY(105vh) scale(0);}30%{opacity:0.85;}100%{opacity:0;transform:translateY(-20vh) scale(1.6);}}
-.splash-logo-box{width:110px;height:110px;border-radius:28px;overflow:hidden;animation:sLogo 0.8s cubic-bezier(0.34,1.56,0.64,1) both;}
-.splash-logo-box img{width:100%;height:100%;object-fit:cover;}
-.splash-logo-box.premium{box-shadow:0 0 0 3px #ffd700,0 8px 40px rgba(255,215,0,0.7);animation:sLogoPrem 1s cubic-bezier(0.34,1.56,0.64,1) both!important;}
-@keyframes sLogo{from{opacity:0;transform:scale(0.4);}to{opacity:1;transform:scale(1);}}
-@keyframes sLogoPrem{0%{opacity:0;transform:scale(0.3) rotate(-15deg);}60%{transform:scale(1.12) rotate(4deg);}100%{opacity:1;transform:scale(1) rotate(0deg);}}
-.splash-title{font-size:34px;font-weight:800;letter-spacing:-1px;margin-top:20px;color:#fff;animation:sUp 0.65s 0.25s ease both;}
-.splash-title.premium{background:linear-gradient(135deg,#ffd700,#ff8c00 40%,#fff 60%,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.splash-sub{font-size:13px;color:rgba(255,255,255,0.45);margin-top:8px;animation:sUp 0.65s 0.45s ease both;}
-.splash-sub.premium{color:#ffcc44;font-weight:600;font-size:14px;}
-@keyframes sUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
-
-
 /* ===== IN-APP PUSH TOAST ===== */
 .push-toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-120px);z-index:1200;background:rgba(20,0,35,0.96);border:1px solid rgba(155,0,255,0.35);border-radius:18px;padding:12px 16px;display:flex;align-items:center;gap:12px;min-width:280px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.6);backdrop-filter:blur(12px);transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s ease;opacity:0;pointer-events:none;}
 .push-toast.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:all;}
@@ -1478,7 +1426,6 @@ function loginAsNick(nick,phoneKey){
     db.ref('users/'+nick+'/online').set(true);
     const th=localStorage.getItem('fct')||'default';applyTheme(th);
     ss('chatsScreen');
-    setTimeout(function(){showSplash(window._myPremium);},60);
     ensureFounderChat();
     loadChats();loadPosts();renderProfile();startListeners();loadBlocked();
     requestNotifPermission();
@@ -1500,13 +1447,7 @@ function ensureFounderChat(){
 // AUTO LOGIN (если телефон уже подтверждался на этом устройстве)
 (()=>{
   const savedPhone=localStorage.getItem('fphone'),savedNick=localStorage.getItem('fn');
-  if(savedPhone&&savedNick){
-    loginAsNick(savedNick,savedPhone);
-  } else {
-    // нет сохранённой сессии — прячем сплэш, иначе он навсегда закроет экран логина
-    var o=document.getElementById('splashOverlay');
-    if(o) setTimeout(function(){_hideSplash(o);}, 400);
-  }
+  if(savedPhone&&savedNick){loginAsNick(savedNick,savedPhone);}
 })();
 
 function logout(){
@@ -4159,6 +4100,7 @@ function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrol
 let waitingSW=null;
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
+    const hadControllerAtStart=!!navigator.serviceWorker.controller;
     navigator.serviceWorker.register('sw.js').then(reg=>{
       // Уже есть обновление, ожидающее активации
       if(reg.waiting){waitingSW=reg.waiting;showUpdateBanner();}
@@ -4179,6 +4121,9 @@ if('serviceWorker' in navigator){
     }).catch(()=>{});
     let refreshing=false;
     navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      // Не перезагружаем при самой первой активации SW (свежая установка) —
+      // только когда это реальное обновление уже работающего приложения
+      if(!hadControllerAtStart)return;
       if(refreshing)return;
       refreshing=true;
       window.location.reload();
@@ -4223,15 +4168,6 @@ window.applyAppUpdate=function(){
   onmousedown="svHoldStart()" onmouseup="svHoldEnd()" onmouseleave="svHoldEnd()"></div>
 <!-- LIKE ANIM -->
 <div class="story-like-anim" id="storyLikeAnim">❤️</div>
-<!-- SPLASH SCREEN -->
-<div class="splash-overlay" id="splashOverlay" style="background:#0d0010;">
-  <div class="splash-particles" id="splashParticles"></div>
-  <div class="splash-logo-box" id="splashLogoBox">
-    <img id="splashImg" src="icon-192.png" onerror="this.style.display='none';this.parentNode.textContent='⚡';">
-  </div>
-  <div class="splash-title" id="splashTitle">FitChat</div>
-  <div class="splash-sub" id="splashSub">Загрузка...</div>
-</div>
 
 <!-- IN-APP PUSH TOAST -->
 <div class="push-toast" id="pushToast" onclick="pushToastClick()">
