@@ -489,7 +489,7 @@ function pushMessage(toNick, chatId, chatType, text) {
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:#0d0010;color:#e2e8f0;}
+html,body{height:100%;height:100dvh;overflow:hidden;font-family:'Inter',sans-serif;background:#0d0010;color:#e2e8f0;}
 
 /* ===== ANIMATED BACKGROUND ===== */
 .bg-anim{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
@@ -533,9 +533,9 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .err{font-size:13px;color:#f87171;text-align:center;min-height:18px;}
 
 /* ===== BOTTOM NAV ===== */
-.bottom-nav{display:flex;flex-shrink:0;background:rgba(24,4,28,0.55);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);margin:0 10px calc(10px + env(safe-area-inset-bottom,0)) 10px;border-radius:22px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 8px 28px rgba(0,0,0,0.35);padding:4px;}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px;cursor:pointer;position:relative;border-radius:14px;margin:2px;transition:all 0.3s;}
-.nav-item.active{background:linear-gradient(135deg,rgba(255,255,255,0.16),rgba(255,255,255,0.05));}
+.bottom-nav{display:flex;flex-shrink:0;background:rgba(24,4,28,0.5);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);margin:0 10px calc(12px + env(safe-area-inset-bottom,0)) 10px;border-radius:22px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 8px 24px rgba(0,0,0,0.3);padding:4px;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px;cursor:pointer;position:relative;border-radius:12px;margin:4px 2px;transition:all 0.25s;}
+.nav-item.active{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);margin:3px 1px;}
 .nav-item.active .nav-label{color:#d87bff;}
 .nav-item.active .nav-icon{filter:drop-shadow(0 0 6px #9b00ff);}
 .nav-item.glow-active{box-shadow:0 0 0 2px rgba(155,0,255,0.6),0 0 16px rgba(155,0,255,0.3);border-radius:14px;}
@@ -895,7 +895,6 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
   <div class="bg-orb bg-orb3"></div>
 </div>
 <!-- GLOW STRIP -->
-<div class="bottom-glow-strip" id="glowStrip"></div>
 <!-- PARTICLES -->
 <canvas id="particleCanvas"></canvas>
 
@@ -956,11 +955,11 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
   <div class="stories-bar" id="storiesBar"></div>
   <div class="list" id="chatsList"><div class="empty"><div>💬</div><div>Нет чатов. Нажми ✏️!</div></div></div>
   <div class="bottom-nav" id="bnChats">
-    <div class="nav-item active" id="nb1" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
-    <div class="nav-item" id="nb2" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
-    <div class="nav-item" id="nb3" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игра</div></div>
-    <div class="nav-item" id="nb3s" onclick="goTabNav('shop',this)"><div class="nav-icon">🛍️</div><div class="nav-label">Shop</div></div>
-    <div class="nav-item" id="nb4" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
+    <div class="nav-item active" data-tab="chats" id="nb1" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
+    <div class="nav-item" data-tab="posts" id="nb2" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
+    <div class="nav-item" data-tab="game" id="nb3" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игра</div></div>
+    <div class="nav-item" data-tab="shop" id="nb3s" onclick="goTabNav('shop',this)"><div class="nav-icon">🛍️</div><div class="nav-label">Shop</div></div>
+    <div class="nav-item" data-tab="profile" id="nb4" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
   </div>
 </div>
 
@@ -973,11 +972,11 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
   </div>
   <div class="list" id="postsList" style="padding-bottom:70px;"></div>
   <div class="bottom-nav">
-    <div class="nav-item" id="nb5" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
-    <div class="nav-item active" id="nb6" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
-    <div class="nav-item" id="nb7" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игра</div></div>
-    <div class="nav-item" id="nbP_shop" onclick="goTabNav('shop',this)"><div class="nav-icon">🛍️</div><div class="nav-label">Shop</div></div>
-    <div class="nav-item" id="nb8" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
+    <div class="nav-item" data-tab="chats" id="nb5" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
+    <div class="nav-item active" data-tab="posts" id="nb6" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
+    <div class="nav-item" data-tab="game" id="nb7" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игра</div></div>
+    <div class="nav-item" data-tab="shop" id="nbP_shop" onclick="goTabNav('shop',this)"><div class="nav-icon">🛍️</div><div class="nav-label">Shop</div></div>
+    <div class="nav-item" data-tab="profile" id="nb8" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
   </div>
 </div>
 
@@ -990,11 +989,11 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
   </div>
   <div class="profile-wrap" id="profileWrap"></div>
   <div class="bottom-nav">
-    <div class="nav-item" id="nb9" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
-    <div class="nav-item" id="nb10" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
-    <div class="nav-item" id="nb11" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игра</div></div>
-    <div class="nav-item" id="shnb6" onclick="goTabNav('shop',this)"><div class="nav-icon">🛍️</div><div class="nav-label">Shop</div></div>
-    <div class="nav-item active" id="nb12" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
+    <div class="nav-item" data-tab="chats" id="nb9" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
+    <div class="nav-item" data-tab="posts" id="nb10" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
+    <div class="nav-item" data-tab="game" id="nb11" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игра</div></div>
+    <div class="nav-item" data-tab="shop" id="shnb6" onclick="goTabNav('shop',this)"><div class="nav-icon">🛍️</div><div class="nav-label">Shop</div></div>
+    <div class="nav-item active" data-tab="profile" id="nb12" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
   </div>
 </div>
 
@@ -1007,11 +1006,11 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
   </div>
   <div class="game-wrap" id="gameWrap"></div>
   <div class="bottom-nav">
-    <div class="nav-item" id="nb13" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
-    <div class="nav-item" id="nb14" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
-    <div class="nav-item active" id="nb15" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игра</div></div>
-    <div class="nav-item" id="shnb7" onclick="goTabNav('shop',this)"><div class="nav-icon">🛍️</div><div class="nav-label">Shop</div></div>
-    <div class="nav-item" id="nb16" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
+    <div class="nav-item" data-tab="chats" id="nb13" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
+    <div class="nav-item" data-tab="posts" id="nb14" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
+    <div class="nav-item active" data-tab="game" id="nb15" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игра</div></div>
+    <div class="nav-item" data-tab="shop" id="shnb7" onclick="goTabNav('shop',this)"><div class="nav-icon">🛍️</div><div class="nav-label">Shop</div></div>
+    <div class="nav-item" data-tab="profile" id="nb16" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
   </div>
 </div>
 
@@ -1024,11 +1023,11 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
   </div>
   <div class="list" id="shopContent" style="padding-bottom:80px;"></div>
   <div class="bottom-nav">
-    <div class="nav-item" id="nbS1" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
-    <div class="nav-item" id="nbS2" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
-    <div class="nav-item" id="nbS3" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игра</div></div>
-    <div class="nav-item active" id="nbS4" onclick="goTabNav('shop',this)"><div class="nav-icon">🛍️</div><div class="nav-label">Shop</div></div>
-    <div class="nav-item" id="nbS5" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
+    <div class="nav-item" data-tab="chats" id="nbS1" onclick="goTabNav('chats',this)"><div class="nav-icon">💬</div><div class="nav-label">Чаты</div></div>
+    <div class="nav-item" data-tab="posts" id="nbS2" onclick="goTabNav('posts',this)"><div class="nav-icon">📰</div><div class="nav-label">Лента</div></div>
+    <div class="nav-item" data-tab="game" id="nbS3" onclick="goTabNav('game',this)"><div class="nav-icon">🎮</div><div class="nav-label">Игра</div></div>
+    <div class="nav-item active" data-tab="shop" id="nbS4" onclick="goTabNav('shop',this)"><div class="nav-icon">🛍️</div><div class="nav-label">Shop</div></div>
+    <div class="nav-item" data-tab="profile" id="nbS5" onclick="goTabNav('profile',this)"><div class="nav-icon">👤</div><div class="nav-label">Профиль</div></div>
   </div>
 </div>
 
@@ -1485,11 +1484,12 @@ function logout(){
 
 // TABS NAV
 function goTabNav(tab,el){
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    n.classList.toggle('active',n.getAttribute('data-tab')===tab);
+  });
   // Glow on first click
   const elId=el.id;
   if(elId&&!navGlowSet.has(elId)){navGlowSet.add(elId);el.classList.add('glow-active');setTimeout(()=>el.classList.remove('glow-active'),1200);}
-  el.classList.add('active');
   if(tab==='chats'){ss('chatsScreen');}
   else if(tab==='posts'){ss('postsScreen');loadPosts();}
   else if(tab==='game'){ss('gameScreen');renderGame();}
@@ -1642,6 +1642,23 @@ window.addEventListener('popstate',function(e){
     history.pushState(null,'',location.href);
   }
 });
+// Свайп вправо для выхода из чата/канала
+(()=>{
+  let sx=0,sy=0,tracking=false;
+  document.addEventListener('touchstart',function(e){
+    const active=document.querySelector('.screen.active');
+    if(!active||(active.id!=='chatScreen'&&active.id!=='channelScreen'))return;
+    if(e.touches.length!==1)return;
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;tracking=true;
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(!tracking)return;tracking=false;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-sx,dy=t.clientY-sy;
+    // Свайп вправо: палец сдвинулся заметно вправо и движение преимущественно горизонтальное
+    if(dx>70&&Math.abs(dx)>Math.abs(dy)*1.5){backToChats();}
+  },{passive:true});
+})();
 window.openChat=function(id,type,name,color){
   if(type==='dm'&&blockedUsers[name]){alert('Этот пользователь заблокирован.');return;}
   if(type==='dm'){
