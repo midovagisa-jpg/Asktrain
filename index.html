@@ -599,6 +599,12 @@ html,body{height:100%;height:100dvh;overflow:hidden;font-family:'Inter',sans-ser
 .dm-btn{width:100%;padding:11px;background:rgba(155,0,255,0.1);border:1px solid rgba(155,0,255,0.2);border-radius:12px;color:#d87bff;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;margin-top:6px;}
 .list{flex:1;overflow-y:auto;padding:8px;}
 .chat-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;cursor:pointer;transition:background 0.2s;}
+.chat-ctx-backdrop{position:fixed;inset:0;z-index:4999;background:rgba(0,0,0,0.25);}
+.chat-ctx-menu{position:fixed;z-index:5000;background:rgba(30,8,36,0.9);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:6px;min-width:210px;box-shadow:0 10px 30px rgba(0,0,0,0.45);opacity:0;transform:scale(0.92);transition:opacity 0.15s ease,transform 0.15s ease;}
+.chat-ctx-menu.open{opacity:1;transform:scale(1);}
+.chat-ctx-item{padding:11px 14px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;color:#f1f1f1;}
+.chat-ctx-item:active{background:rgba(255,255,255,0.1);}
+.chat-ctx-item.danger{color:#f87171;}
 .chat-item:active{background:rgba(255,255,255,0.05);}
 .av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:white;flex-shrink:0;}
 .chat-info{flex:1;min-width:0;}
@@ -1483,18 +1489,18 @@ function logout(){
 }
 
 // TABS NAV
-function goTabNav(tab,el){
+function goTabNav(tab,el,mode){
   document.querySelectorAll('.nav-item').forEach(n=>{
     n.classList.toggle('active',n.getAttribute('data-tab')===tab);
   });
   // Glow on first click
   const elId=el.id;
   if(elId&&!navGlowSet.has(elId)){navGlowSet.add(elId);el.classList.add('glow-active');setTimeout(()=>el.classList.remove('glow-active'),1200);}
-  if(tab==='chats'){ss('chatsScreen');}
-  else if(tab==='posts'){ss('postsScreen');loadPosts();}
-  else if(tab==='game'){ss('gameScreen');renderGame();}
-  else if(tab==='profile'){ss('profileScreen');renderProfile();}
-  else if(tab==='shop'){ss('shopScreen');renderShop();}
+  if(tab==='chats'){ss('chatsScreen',mode);}
+  else if(tab==='posts'){ss('postsScreen',mode);loadPosts();}
+  else if(tab==='game'){ss('gameScreen',mode);renderGame();}
+  else if(tab==='profile'){ss('profileScreen',mode);renderProfile();}
+  else if(tab==='shop'){ss('shopScreen',mode);renderShop();}
   // Clear badges for current tab
   if(tab==='chats') clearBadge(['nb1','nb5','nb9','nb13','nbS1']);
   if(tab==='posts') clearBadge(['nb2','nb6','nb10','nb14','nbS2']);
@@ -1526,7 +1532,7 @@ function loadChats(){
   db.ref('dms').on('value',snap=>{
     chats=chats.filter(c=>c.type!=='dm');
     const hidden=JSON.parse(localStorage.getItem('hiddenChats')||'[]');
-    Object.entries(snap.val()||{}).forEach(([id,d])=>{if(id.includes(myNick)&&!hidden.includes(id)){const other=id.split('_').find(p=>p!==myNick)||id;chats.push({id,type:'dm',name:other,color:gc(other),lastMsg:d.lastMsg||'',lastTs:d.lastTs||0,unread:d.unread&&d.unread[myNick]});checkNewMessageNotify(id,'dm',other,d);}});
+    Object.entries(snap.val()||{}).forEach(([id,d])=>{if(id.includes(myNick)&&!hidden.includes(id)){const other=d.members?(Object.keys(d.members).find(p=>p!==myNick)||id):(id.split('_').find(p=>p!==myNick)||id);chats.push({id,type:'dm',name:other,color:gc(other),lastMsg:d.lastMsg||'',lastTs:d.lastTs||0,unread:d.unread&&d.unread[myNick]});checkNewMessageNotify(id,'dm',other,d);}});
     renderChats();updateUnreadBadges();
   });
   db.ref('channels').on('value',snap=>{
@@ -1596,18 +1602,26 @@ window.togglePinChat=function(chatId){
 }
 function renderChats(q=''){
   const el=document.getElementById('chatsList');
+  const archived=JSON.parse(localStorage.getItem('archivedChats')||'[]');
   let list=[...chats];
   list=list.filter(c=>c.type!=='dm'||!blockedUsers[c.name]);
-  if(curTab==='dm')list=list.filter(c=>c.type==='dm');
-  if(curTab==='group')list=list.filter(c=>c.type==='group');
-  if(curTab==='channel')list=list.filter(c=>c.type==='channel');
-  else if(curTab==='all')list=list.filter(c=>c.type!=='channel'||c.subscribed); // в "Все" только подписки
+  if(curTab==='archive'){
+    list=list.filter(c=>archived.includes(c.id));
+  } else {
+    list=list.filter(c=>!archived.includes(c.id));
+    if(curTab==='dm')list=list.filter(c=>c.type==='dm');
+    if(curTab==='group')list=list.filter(c=>c.type==='group');
+    if(curTab==='channel')list=list.filter(c=>c.type==='channel');
+    else if(curTab==='all')list=list.filter(c=>c.type!=='channel'||c.subscribed); // в "Все" только подписки
+  }
   if(q)list=list.filter(c=>c.name.toLowerCase().includes(q.toLowerCase()));
   list.sort((a,b)=>b.lastTs-a.lastTs);
-  if(!list.length){el.innerHTML=`<div class="empty"><div>${curTab==='channel'?'📢':'💬'}</div><div>${curTab==='channel'?'Каналов пока нет. Создай свой!':'Нет чатов'}</div></div>`;return;}
+  const archiveRowHtml=(curTab!=='archive'&&archived.length>0)?`<div class="chat-item" style="position:relative;opacity:0.85;" onclick="curTab='archive';renderChats();"><div class="av" style="background:linear-gradient(135deg,#555,#333);">📦</div><div class="chat-info"><div class="chat-name">Архив</div><div class="chat-last">${archived.length} ${archived.length===1?'чат':'чатов'}</div></div></div>`:'';
+  const backRowHtml=curTab==='archive'?`<div class="chat-item" style="position:relative;opacity:0.85;" onclick="curTab='all';renderChats();"><div class="av" style="background:rgba(255,255,255,0.1);">←</div><div class="chat-info"><div class="chat-name">Назад к чатам</div></div></div>`:'';
+  if(!list.length){el.innerHTML=backRowHtml+`<div class="empty"><div>${curTab==='archive'?'📦':curTab==='channel'?'📢':'💬'}</div><div>${curTab==='archive'?'В архиве пусто':curTab==='channel'?'Каналов пока нет. Создай свой!':'Нет чатов'}</div></div>`;return;}
   const th=localStorage.getItem('fct')||'default';
   const tc=themeColors[th]||themeColors.default;
-  el.innerHTML=list.map(c=>{
+  el.innerHTML=backRowHtml+archiveRowHtml+list.map(c=>{
     if(c.type==='channel'){
       const verified=c.subCount>=100;
       return `<div class="chat-item" style="position:relative;" onclick="openChannel('${c.id}','${c.name}','${c.color}')">
@@ -1618,7 +1632,7 @@ function renderChats(q=''){
     }
     const presence=c.type==='dm'?presenceCache[c.name]:null;
     const isPinned=pinnedChats.includes(c.id);
-    return `<div class="chat-item" style="position:relative;${isPinned?'border-left:3px solid #ffd700;':''}" onclick="openChat('${c.id}','${c.type}','${c.name}','${c.color}')" oncontextmenu="event.preventDefault();togglePinChat('${c.id}')" title="Долгое нажатие — закрепить/открепить">
+    return `<div class="chat-item" data-chatid="${c.id}" data-chattype="${c.type}" data-chatname="${c.name}" style="position:relative;${isPinned?'border-left:3px solid #ffd700;':''}" onclick="openChat('${c.id}','${c.type}','${c.name}','${c.color}')">
     <div style="position:relative;flex-shrink:0;">
       <div class="av" style="${avBg(c.color,c.avatar||avatarCache[c.name])}">${avTxt(c.name,c.avatar||avatarCache[c.name])}</div>
       ${presence&&presence.online?'<div class="online-dot" style="position:absolute;bottom:-1px;right:-1px;border:2px solid #0d0010;"></div>':''}
@@ -1628,7 +1642,6 @@ function renderChats(q=''){
       <div class="chat-time">${c.lastTs?new Date(c.lastTs).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}):''}</div>
       ${c.unread?`<div style="width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,${tc.g1},${tc.g2});box-shadow:0 0 6px ${tc.g1};"></div>`:''}
     </div>
-    <div onclick="event.stopPropagation();deleteChat('${c.id}','${c.type}')" style="padding:6px 8px;margin-left:6px;color:rgba(248,113,113,0.6);font-size:18px;cursor:pointer;" title="Удалить чат">🗑️</div>
   </div>`;
   }).join('');
 }
@@ -1642,6 +1655,34 @@ window.addEventListener('popstate',function(e){
     history.pushState(null,'',location.href);
   }
 });
+// Свайп влево/вправо для переключения между разделами (Чаты/Лента/Игра/Shop/Профиль)
+(()=>{
+  const TAB_ORDER=['chats','posts','game','shop','profile'];
+  const SCREEN_TO_TAB={chatsScreen:'chats',postsScreen:'posts',gameScreen:'game',shopScreen:'shop',profileScreen:'profile'};
+  let sx=0,sy=0,tracking=false;
+  document.addEventListener('touchstart',function(e){
+    const active=document.querySelector('.screen.active');
+    if(!active||!SCREEN_TO_TAB[active.id])return;
+    if(e.touches.length!==1)return;
+    // Не перехватываем свайп, если он начался на горизонтально прокручиваемой ленте историй
+    if(e.target.closest&&e.target.closest('.stories-bar'))return;
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;tracking=true;
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(!tracking)return;tracking=false;
+    const active=document.querySelector('.screen.active');
+    if(!active||!SCREEN_TO_TAB[active.id])return;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-sx,dy=t.clientY-sy;
+    if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.5)return;
+    const idx=TAB_ORDER.indexOf(SCREEN_TO_TAB[active.id]);
+    const newIdx=dx<0?idx+1:idx-1; // влево — следующая вкладка, вправо — предыдущая
+    if(newIdx<0||newIdx>=TAB_ORDER.length)return;
+    const newTab=TAB_ORDER[newIdx];
+    const el=document.querySelector('.nav-item[data-tab="'+newTab+'"]');
+    if(el)goTabNav(newTab,el,dx<0?'push':'pop');
+  },{passive:true});
+})();
 // Свайп вправо для выхода из чата/канала
 (()=>{
   let sx=0,sy=0,tracking=false;
@@ -1800,9 +1841,12 @@ function loadMsgs(chatId,type){
   let lastDate='',lastNick='',firstLoad=true;
 
   function isFromBlocked(m){return type==='dm'&&blockedUsers[m.nick];}
+  function isBeforeCleared(m){
+    try{const c=JSON.parse(localStorage.getItem('clearedChats')||'{}');const t=c[chatId];return !!(t&&m.ts<=t);}catch(e){return false;}
+  }
 
   const onAdd=ref.on('child_added',snap=>{
-    const m=snap.val();if(!m||isFromBlocked(m))return;
+    const m=snap.val();if(!m||isFromBlocked(m)||isBeforeCleared(m))return;
     const msgId=snap.key;
     const d=new Date(m.ts).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
     let html='';
@@ -2883,6 +2927,91 @@ window.deleteChat=function(id,type){
 
 function isHidden(id){const h=JSON.parse(localStorage.getItem('hiddenChats')||'[]');return h.includes(id);}
 
+window.clearChatHistory=function(id,type){
+  if(!confirm('Очистить историю переписки? Сообщения будут скрыты только у тебя.'))return;
+  try{
+    const c=JSON.parse(localStorage.getItem('clearedChats')||'{}');
+    c[id]=Date.now();
+    localStorage.setItem('clearedChats',JSON.stringify(c));
+  }catch(e){}
+  if(curChat===id&&document.getElementById('chatMsgs')){document.getElementById('chatMsgs').innerHTML='';loadMsgs(id,type);}
+  chats=chats.map(x=>x.id===id?Object.assign({},x,{lastMsg:''}):x);
+  renderChats();
+};
+
+window.toggleArchiveChat=function(id){
+  let archived=JSON.parse(localStorage.getItem('archivedChats')||'[]');
+  if(archived.includes(id)){archived=archived.filter(a=>a!==id);}
+  else{archived.push(id);}
+  localStorage.setItem('archivedChats',JSON.stringify(archived));
+  renderChats();
+};
+
+// ===== Долгое нажатие на чат: контекстное меню (закрепить/архив/очистить/заблокировать/удалить) =====
+let ctxMenuEl=null,ctxBackdropEl=null;
+window.closeCtxMenu=function(){
+  if(ctxMenuEl){ctxMenuEl.remove();ctxMenuEl=null;}
+  if(ctxBackdropEl){ctxBackdropEl.remove();ctxBackdropEl=null;}
+};
+function showChatCtxMenu(x,y,id,type,name){
+  closeCtxMenu();
+  const archived=JSON.parse(localStorage.getItem('archivedChats')||'[]');
+  const isArchived=archived.includes(id);
+  const isPinned=pinnedChats.includes(id);
+  const isBlocked=type==='dm'&&blockedUsers[name];
+  const items=[
+    {label:isPinned?'📌 Открепить':'📌 Закрепить',action:`togglePinChat('${id}')`},
+    {label:isArchived?'📦 Восстановить из архива':'📦 Добавить в архив',action:`toggleArchiveChat('${id}')`},
+    {label:'🧹 Очистить историю',action:`clearChatHistory('${id}','${type}')`}
+  ];
+  if(type==='dm'){items.push({label:isBlocked?'🔓 Разблокировать':'🚫 Заблокировать',action:`toggleBlock('${name}')`});}
+  items.push({label:'🗑️ Удалить чат',action:`deleteChat('${id}','${type}')`,danger:true});
+  ctxBackdropEl=document.createElement('div');
+  ctxBackdropEl.className='chat-ctx-backdrop';
+  ctxBackdropEl.onclick=closeCtxMenu;
+  document.body.appendChild(ctxBackdropEl);
+  const menu=document.createElement('div');
+  menu.className='chat-ctx-menu';
+  menu.innerHTML=items.map(it=>`<div class="chat-ctx-item${it.danger?' danger':''}" onclick="closeCtxMenu();${it.action}">${it.label}</div>`).join('');
+  document.body.appendChild(menu);
+  requestAnimationFrame(()=>{
+    const rect=menu.getBoundingClientRect();
+    let left=x,top=y;
+    if(left+rect.width>window.innerWidth-8)left=window.innerWidth-rect.width-8;
+    if(top+rect.height>window.innerHeight-8)top=window.innerHeight-rect.height-8;
+    if(left<8)left=8;if(top<8)top=8;
+    menu.style.left=left+'px';menu.style.top=top+'px';
+    menu.classList.add('open');
+  });
+  ctxMenuEl=menu;
+}
+(()=>{
+  let pressTimer=null,startX=0,startY=0,longPressFired=false;
+  document.addEventListener('touchstart',function(e){
+    const item=e.target.closest&&e.target.closest('.chat-item[data-chatid]');
+    if(!item||e.touches.length!==1)return;
+    startX=e.touches[0].clientX;startY=e.touches[0].clientY;
+    pressTimer=setTimeout(()=>{
+      longPressFired=true;
+      if(navigator.vibrate)navigator.vibrate(15);
+      showChatCtxMenu(startX,startY,item.getAttribute('data-chatid'),item.getAttribute('data-chattype'),item.getAttribute('data-chatname'));
+      pressTimer=null;
+    },480);
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!pressTimer)return;
+    const t=e.touches[0];
+    if(Math.abs(t.clientX-startX)>12||Math.abs(t.clientY-startY)>12){clearTimeout(pressTimer);pressTimer=null;}
+  },{passive:true});
+  document.addEventListener('touchend',function(){
+    if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+  },{passive:true});
+  // Гасим "клик" сразу после сработавшего долгого нажатия, чтобы чат не открывался вместо показа меню
+  document.addEventListener('click',function(e){
+    if(longPressFired){longPressFired=false;e.preventDefault();e.stopPropagation();}
+  },true);
+})();
+
 window.startDM=function(){
   const nick=sn((document.getElementById('ncNick').value||'').trim());
   if(!nick||nick===myNick){alert('Укажи никнейм другого пользователя');return;}
@@ -2891,7 +3020,8 @@ window.startDM=function(){
     if(!s.val()){alert('Пользователь не найден');return;}
     const dmId=[myNick,nick].sort().join('_');
     db.ref('dms/'+dmId).once('value').then(function(dmSnap){
-      if(!dmSnap.val()){db.ref('dms/'+dmId).set({lastMsg:'',lastTs:Date.now()});}
+      if(!dmSnap.val()){db.ref('dms/'+dmId).set({lastMsg:'',lastTs:Date.now(),members:{[myNick]:true,[nick]:true}});}
+      else if(!dmSnap.val().members){db.ref('dms/'+dmId).update({members:{[myNick]:true,[nick]:true}});}
       closeModal();
       openChat(dmId,'dm',nick,gc(nick));
     });
