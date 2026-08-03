@@ -1061,7 +1061,7 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
     <div class="attach-btn" id="attachBtn" onclick="document.getElementById('chatFileInp').click()">📎</div>
     <input type="file" id="chatFileInp" accept="image/*,video/*" style="display:none;" onchange="handleChatFile(this)">
     <textarea class="chat-inp" id="chatInp" placeholder="Сообщение..." rows="1" oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
-    <div class="round-rec-btn" onclick="openRoundRecorder('chat')" title="Видео-кружок">⭕</div>
+    <div class="round-rec-btn" onclick="openRoundRecorder('chat')" title="Видео-кружок">⦿</div>
     <div class="mic-btn" id="voiceBtn" onclick="toggleVoice()">🎤</div>
     <button class="send-btn" id="sendMsgBtn" onclick="sendMsg()">➤</button>
   </div>
@@ -1132,7 +1132,7 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
     <div class="attach-btn" onclick="document.getElementById('channelFileInp').click()">📎</div>
     <input type="file" id="channelFileInp" accept="image/*,video/*" style="display:none;" onchange="handleChannelFile(this)">
     <textarea class="chat-inp" id="channelPostInp" placeholder="Написать в канал..." rows="1" oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();postToChannel();}"></textarea>
-    <div class="round-rec-btn" onclick="openRoundRecorder('channel')" title="Видео-кружок">⭕</div>
+    <div class="round-rec-btn" onclick="openRoundRecorder('channel')" title="Видео-кружок">⦿</div>
     <div class="mic-btn" id="channelVoiceBtn" onclick="toggleChannelVoice()">🎤</div>
     <button class="send-btn" onclick="postToChannel()">➤</button>
   </div>
@@ -1454,23 +1454,11 @@ function loginAsNick(nick,phoneKey){
     db.ref('users/'+nick+'/online').set(true);
     const th=localStorage.getItem('fct')||'default';applyTheme(th);
     ss('chatsScreen');
-    ensureFounderChat();
     loadChats();loadPosts();renderProfile();startListeners();loadBlocked();
     requestNotifPermission();
   }).catch(e=>{clearTimeout(t);if(err){err.style.color='#f87171';err.textContent='Ошибка: '+e.message;}});
 }
 
-function ensureFounderChat(){
-  if(myNick===ADMIN)return;
-  const dmId=[myNick,ADMIN].sort().join('_');
-  db.ref('dms/'+dmId).once('value').then(s=>{
-    if(!s.val()){
-      const wMsg='👋 Привет, '+myNick+'! Добро пожаловать в FitChat. Если будут вопросы — пиши сюда! Наслаждайся общением 🚀';
-      db.ref('dms/'+dmId).set({lastMsg:wMsg,lastTs:Date.now(),lastNick:ADMIN,members:{[myNick]:true,[ADMIN]:true}});
-      db.ref('dms/'+dmId+'/messages').push({nick:ADMIN,text:wMsg,ts:Date.now()});
-    }
-  });
-}
 
 // AUTO LOGIN (если телефон уже подтверждался на этом устройстве)
 (()=>{
@@ -1489,7 +1477,17 @@ function logout(){
 }
 
 // TABS NAV
+const TAB_ORDER_MAIN=['chats','posts','game','shop','profile'];
+const SCREEN_TO_TAB_MAIN={chatsScreen:'chats',postsScreen:'posts',gameScreen:'game',shopScreen:'shop',profileScreen:'profile'};
 function goTabNav(tab,el,mode){
+  if(!mode){
+    const active=document.querySelector('.screen.active');
+    const curTabName=active?SCREEN_TO_TAB_MAIN[active.id]:null;
+    if(curTabName&&curTabName!==tab){
+      const fromIdx=TAB_ORDER_MAIN.indexOf(curTabName),toIdx=TAB_ORDER_MAIN.indexOf(tab);
+      if(fromIdx>=0&&toIdx>=0)mode=toIdx>fromIdx?'push':'pop';
+    }
+  }
   document.querySelectorAll('.nav-item').forEach(n=>{
     n.classList.toggle('active',n.getAttribute('data-tab')===tab);
   });
@@ -1602,6 +1600,9 @@ window.togglePinChat=function(chatId){
 }
 function renderChats(q=''){
   const el=document.getElementById('chatsList');
+  // FLIP: запоминаем текущие позиции элементов, чтобы плавно анимировать переезд на новое место (например, при закреплении)
+  const prevRects={};
+  el.querySelectorAll('.chat-item[data-chatid]').forEach(it=>{prevRects[it.getAttribute('data-chatid')]=it.getBoundingClientRect();});
   const archived=JSON.parse(localStorage.getItem('archivedChats')||'[]');
   let list=[...chats];
   list=list.filter(c=>c.type!=='dm'||!blockedUsers[c.name]);
@@ -1615,11 +1616,14 @@ function renderChats(q=''){
     else if(curTab==='all')list=list.filter(c=>c.type!=='channel'||c.subscribed); // в "Все" только подписки
   }
   if(q)list=list.filter(c=>c.name.toLowerCase().includes(q.toLowerCase()));
-  list.sort((a,b)=>b.lastTs-a.lastTs);
+  list.sort((a,b)=>{
+    const ap=pinnedChats.includes(a.id)?1:0,bp=pinnedChats.includes(b.id)?1:0;
+    if(ap!==bp)return bp-ap;
+    return b.lastTs-a.lastTs;
+  });
   const archiveRowHtml=(curTab!=='archive'&&archived.length>0)?`<div class="chat-item" style="position:relative;opacity:0.85;" onclick="curTab='archive';renderChats();"><div class="av" style="background:linear-gradient(135deg,#555,#333);">📦</div><div class="chat-info"><div class="chat-name">Архив</div><div class="chat-last">${archived.length} ${archived.length===1?'чат':'чатов'}</div></div></div>`:'';
   const backRowHtml=curTab==='archive'?`<div class="chat-item" style="position:relative;opacity:0.85;" onclick="curTab='all';renderChats();"><div class="av" style="background:rgba(255,255,255,0.1);">←</div><div class="chat-info"><div class="chat-name">Назад к чатам</div></div></div>`:'';
-  if(!list.length){el.innerHTML=backRowHtml+`<div class="empty"><div>${curTab==='archive'?'📦':curTab==='channel'?'📢':'💬'}</div><div>${curTab==='archive'?'В архиве пусто':curTab==='channel'?'Каналов пока нет. Создай свой!':'Нет чатов'}</div></div>`;return;}
-  const th=localStorage.getItem('fct')||'default';
+  if(!list.length){el.innerHTML=backRowHtml+`<div class="empty"><div>${curTab==='archive'?'📦':curTab==='channel'?'📢':'💬'}</div><div>${curTab==='archive'?'В архиве пусто':curTab==='channel'?'Каналов пока нет. Создай свой!':'Нет чатов'}</div></div>`;return;}  const th=localStorage.getItem('fct')||'default';
   const tc=themeColors[th]||themeColors.default;
   el.innerHTML=backRowHtml+archiveRowHtml+list.map(c=>{
     if(c.type==='channel'){
@@ -1644,6 +1648,22 @@ function renderChats(q=''){
     </div>
   </div>`;
   }).join('');
+  // FLIP: проигрываем анимацию перехода со старой позиции на новую (например, закреплённый чат плавно взлетает наверх)
+  requestAnimationFrame(()=>{
+    el.querySelectorAll('.chat-item[data-chatid]').forEach(it=>{
+      const old=prevRects[it.getAttribute('data-chatid')];
+      if(!old)return;
+      const now=it.getBoundingClientRect();
+      const dy=old.top-now.top;
+      if(Math.abs(dy)<1)return;
+      it.style.transition='none';
+      it.style.transform='translateY('+dy+'px)';
+      requestAnimationFrame(()=>{
+        it.style.transition='transform 0.32s cubic-bezier(.4,0,.2,1)';
+        it.style.transform='';
+      });
+    });
+  });
 }
 
 let lastReadListenerRef=null;
@@ -1657,8 +1677,8 @@ window.addEventListener('popstate',function(e){
 });
 // Свайп влево/вправо для переключения между разделами (Чаты/Лента/Игра/Shop/Профиль)
 (()=>{
-  const TAB_ORDER=['chats','posts','game','shop','profile'];
-  const SCREEN_TO_TAB={chatsScreen:'chats',postsScreen:'posts',gameScreen:'game',shopScreen:'shop',profileScreen:'profile'};
+  const TAB_ORDER=TAB_ORDER_MAIN;
+  const SCREEN_TO_TAB=SCREEN_TO_TAB_MAIN;
   let sx=0,sy=0,tracking=false;
   document.addEventListener('touchstart',function(e){
     const active=document.querySelector('.screen.active');
@@ -2149,7 +2169,7 @@ window.sendRoundVideo=function(){
   } else if(curChat){
     const path=curType==='group'?'groups/'+curChat+'/messages':'dms/'+curChat+'/messages';
     db.ref(path).push({nick:myNick,roundVideo:pendingRoundVideo.data,duration:pendingRoundVideo.duration,ts:Date.now()});
-    db.ref(curType==='group'?'groups/'+curChat:'dms/'+curChat).update({lastMsg:'⭕ Видео-кружок',lastTs:Date.now(),lastNick:myNick});
+    db.ref(curType==='group'?'groups/'+curChat:'dms/'+curChat).update({lastMsg:'⦿ Видео-кружок',lastTs:Date.now(),lastNick:myNick});
     if(curType==='dm'){const other=curChat.split('_').find(p=>p!==myNick);if(other)db.ref('dms/'+curChat+'/unread/'+other).set(true);}
   }
   playSendSound();
@@ -2626,7 +2646,7 @@ function renderChannelFeed(id){
             <div class="attach-btn" style="width:32px;height:32px;font-size:14px;flex-shrink:0;" onclick="document.getElementById('cmtFile_${p.pid}').click()">📎</div>
             <input type="file" id="cmtFile_${p.pid}" accept="image/*,video/*" style="display:none;" onchange="handleCommentFile(this,'${id}','${p.pid}')">
             <input class="comment-inp" id="cci_${p.pid}" placeholder="Комментарий..." onkeydown="if(event.key==='Enter')addChannelComment('${id}','${p.pid}')">
-            <div class="round-rec-btn" style="width:32px;height:32px;font-size:14px;flex-shrink:0;" onclick="openRoundRecorder('comment','${id}','${p.pid}')">⭕</div>
+            <div class="round-rec-btn" style="width:32px;height:32px;font-size:14px;flex-shrink:0;" onclick="openRoundRecorder('comment','${id}','${p.pid}')">⦿</div>
             <div class="mic-btn" id="cmtMic_${p.pid}" style="width:32px;height:32px;font-size:14px;flex-shrink:0;" onclick="toggleCommentVoice('${id}','${p.pid}')">🎤</div>
             <button class="small-send" onclick="addChannelComment('${id}','${p.pid}')">➤</button>
           </div>
@@ -2927,6 +2947,25 @@ window.deleteChat=function(id,type){
 
 function isHidden(id){const h=JSON.parse(localStorage.getItem('hiddenChats')||'[]');return h.includes(id);}
 
+window.clearChatHistoryEveryone=function(id,type){
+  if(!confirm('Очистить историю у ВСЕХ участников? Сообщения будут удалены безвозвратно для всех.'))return;
+  const path=type==='group'?'groups/'+id+'/messages':'dms/'+id+'/messages';
+  db.ref(path).remove().then(()=>{
+    db.ref((type==='group'?'groups/':'dms/')+id).update({lastMsg:''});
+    if(curChat===id&&document.getElementById('chatMsgs')){document.getElementById('chatMsgs').innerHTML='';loadMsgs(id,type);}
+    chats=chats.map(x=>x.id===id?Object.assign({},x,{lastMsg:''}):x);
+    renderChats();
+    closeModal();
+  });
+};
+function openClearHistoryChoice(id,type){
+  openModal('🧹 Очистить историю',`
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:13px;color:rgba(255,255,255,0.5);">Выбери, как очистить переписку:</div>
+      <button class="block-btn" onclick="closeModal();clearChatHistory('${id}','${type}')">🙈 Очистить только у себя</button>
+      <button class="block-btn" style="color:#f87171;" onclick="clearChatHistoryEveryone('${id}','${type}')">🗑️ Очистить у всех (необратимо)</button>
+    </div>`);
+}
 window.clearChatHistory=function(id,type){
   if(!confirm('Очистить историю переписки? Сообщения будут скрыты только у тебя.'))return;
   try{
@@ -2960,19 +2999,29 @@ function showChatCtxMenu(x,y,id,type,name){
   const isPinned=pinnedChats.includes(id);
   const isBlocked=type==='dm'&&blockedUsers[name];
   const items=[
-    {label:isPinned?'📌 Открепить':'📌 Закрепить',action:`togglePinChat('${id}')`},
-    {label:isArchived?'📦 Восстановить из архива':'📦 Добавить в архив',action:`toggleArchiveChat('${id}')`},
-    {label:'🧹 Очистить историю',action:`clearChatHistory('${id}','${type}')`}
+    {label:isPinned?'📌 Открепить':'📌 Закрепить',fn:()=>togglePinChat(id)},
+    {label:isArchived?'📦 Восстановить из архива':'📦 Добавить в архив',fn:()=>toggleArchiveChat(id)},
+    {label:'🧹 Очистить историю',fn:()=>openClearHistoryChoice(id,type)}
   ];
-  if(type==='dm'){items.push({label:isBlocked?'🔓 Разблокировать':'🚫 Заблокировать',action:`toggleBlock('${name}')`});}
-  items.push({label:'🗑️ Удалить чат',action:`deleteChat('${id}','${type}')`,danger:true});
+  if(type==='dm'){items.push({label:isBlocked?'🔓 Разблокировать':'🚫 Заблокировать',fn:()=>toggleBlock(name)});}
+  items.push({label:'🗑️ Удалить чат',fn:()=>deleteChat(id,type),danger:true});
   ctxBackdropEl=document.createElement('div');
   ctxBackdropEl.className='chat-ctx-backdrop';
-  ctxBackdropEl.onclick=closeCtxMenu;
+  ctxBackdropEl.addEventListener('click',closeCtxMenu);
   document.body.appendChild(ctxBackdropEl);
   const menu=document.createElement('div');
   menu.className='chat-ctx-menu';
-  menu.innerHTML=items.map(it=>`<div class="chat-ctx-item${it.danger?' danger':''}" onclick="closeCtxMenu();${it.action}">${it.label}</div>`).join('');
+  items.forEach(it=>{
+    const row=document.createElement('div');
+    row.className='chat-ctx-item'+(it.danger?' danger':'');
+    row.textContent=it.label;
+    row.addEventListener('click',function(e){
+      e.stopPropagation();
+      closeCtxMenu();
+      it.fn();
+    });
+    menu.appendChild(row);
+  });
   document.body.appendChild(menu);
   requestAnimationFrame(()=>{
     const rect=menu.getBoundingClientRect();
@@ -3039,13 +3088,6 @@ window.createChannel=function(){
 }
 
 // GROUP SETTINGS
-window.clearChatHistory=function(){
-  if(!curChat)return;
-  if(!confirm('Очистить историю чата? Сообщения будут удалены только у тебя локально.'))return;
-  const el=document.getElementById('chatMsgs');
-  if(el)el.innerHTML='<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px;">🗑️ История чата очищена</div>';
-  closeModal();
-}
 window.openGroupSettings=function(){
   if(curType!=='group')return;
   db.ref('groups/'+curChat).once('value').then(snap=>{
@@ -3069,6 +3111,7 @@ window.openGroupSettings=function(){
       ${isAdmin?`<div class="add-wrap"><input class="inp" id="invInp" placeholder="Пригласить по нику..."><button class="small-btn" onclick="invMember()">+ Пригласить</button></div>`:''}
       ${isAdmin?`<div class="add-wrap"><input class="inp" id="renameGroupInp" placeholder="${g.name}"><button class="small-btn" onclick="renameGroup()">✏️ Переименовать</button></div>`:''}
       <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+        <button onclick="openClearHistoryChoice('${curChat}','group')" style="width:100%;padding:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#e2e8f0;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;">🧹 Очистить историю</button>
         <button onclick="leaveGroup()" style="width:100%;padding:11px;background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.2);border-radius:12px;color:#fbbf24;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;">🚪 Покинуть группу</button>
         ${isAdmin?`<button onclick="deleteGroup()" style="width:100%;padding:11px;background:rgba(220,50,50,0.1);border:1px solid rgba(220,50,50,0.2);border-radius:12px;color:#f87171;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;">🗑️ Удалить группу</button>`:''}
       </div>`);
@@ -3350,7 +3393,7 @@ window.viewProfile=function(nick){
       <button class="praise-btn" onclick="praiseUser('${nick}')">👍 Похвалить (+5 рейтинга)</button>
       <button class="report-btn" onclick="reportUser('${nick}')">🚩 Пожаловаться</button>
       <button class="block-btn" onclick="toggleBlock('${nick}')">${blockedUsers[nick]?'🔓 Разблокировать':'🚫 Заблокировать'}</button>
-      <button class="block-btn" onclick="clearChatHistory()">🗑️ Очистить историю чата</button>
+      <button class="block-btn" onclick="openClearHistoryChoice([myNick,'${nick}'].sort().join('_'),'dm')">🗑️ Очистить историю чата</button>
       ${myNick===ADMIN?`<button class="block-btn" onclick="openRolePicker('${nick}')">🎭 Назначить роль</button>`:''}
     </div>`);
   });
