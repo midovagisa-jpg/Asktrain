@@ -4443,5 +4443,79 @@ window.applyAppUpdate=function(){
   <button class="push-toast-close" onclick="event.stopPropagation();hidePushToast()">&#x2715;</button>
 </div>
 
+
+<script>
+/* ===== OVERSCROLL (rubber-band) — только список чатов ===== */
+(function(){
+  var list = document.getElementById('chatsList');
+  if(!list) return;
+
+  var MAX   = 110;   // максимальный сдвиг в px
+  var startY     = 0;
+  var currentPull= 0;
+  var isPulling  = false;
+  var atTop      = false;
+  var raf        = null;
+
+  /* Формула rubber-band: экспоненциальный подход к MAX */
+  function rubberBand(dy) {
+    return MAX * (1 - Math.exp(-dy / (MAX * 2.4)));
+  }
+
+  function applyTranslate(y) {
+    list.style.webkitTransform = 'translateY(' + y + 'px)';
+    list.style.transform       = 'translateY(' + y + 'px)';
+  }
+
+  function snapBack() {
+    list.style.webkitTransition = 'transform 0.52s cubic-bezier(0.175,0.885,0.32,1.22)';
+    list.style.transition       = 'transform 0.52s cubic-bezier(0.175,0.885,0.32,1.22)';
+    applyTranslate(0);
+    setTimeout(function(){
+      list.style.webkitTransition = 'none';
+      list.style.transition       = 'none';
+      list.style.webkitTransform  = '';
+      list.style.transform        = '';
+    }, 560);
+  }
+
+  list.addEventListener('touchstart', function(e){
+    atTop      = (list.scrollTop <= 0);
+    isPulling  = false;
+    currentPull= 0;
+    if(!atTop) return;
+    startY = e.touches[0].clientY;
+    list.style.webkitTransition = 'none';
+    list.style.transition       = 'none';
+  }, { passive: true });
+
+  list.addEventListener('touchmove', function(e){
+    if(!atTop) return;
+    var dy = e.touches[0].clientY - startY;
+    if(dy <= 0){ atTop = false; return; }  /* пользователь скроллит вниз — обычный скролл */
+
+    e.preventDefault();   /* блокируем нативный overscroll браузера */
+    isPulling   = true;
+    currentPull = rubberBand(dy);
+
+    if(raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(function(){
+      applyTranslate(currentPull);
+    });
+  }, { passive: false });
+
+  function onRelease(){
+    if(!isPulling){ atTop = false; return; }
+    isPulling  = false;
+    atTop      = false;
+    if(raf){ cancelAnimationFrame(raf); raf = null; }
+    snapBack();
+  }
+
+  list.addEventListener('touchend',    onRelease, { passive: true });
+  list.addEventListener('touchcancel', onRelease, { passive: true });
+})();
+</script>
+
 </body>
 </html>
