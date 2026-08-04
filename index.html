@@ -882,7 +882,20 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
 .push-toast-body{flex:1;min-width:0;}
 .push-toast-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .push-toast-text{font-size:12px;color:rgba(255,255,255,0.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
-.push-toast-close{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:rgba(255,255,255,0.5);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}</style>
+.push-toast-close{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:rgba(255,255,255,0.5);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+/* ===== ROUND VIDEO APPEAR ANIMATION ===== */
+.rv-outer{position:relative;display:inline-flex;flex-shrink:0;}
+.rv-ring{position:absolute;top:-5px;left:-5px;width:calc(100% + 10px);height:calc(100% + 10px);pointer-events:none;z-index:5;overflow:visible;}
+.rv-ring circle{stroke-dasharray:503;stroke-dashoffset:503;animation:rvDrawRing 0.5s cubic-bezier(0.33,0,0.18,1) forwards;transform-origin:50% 50%;transform:rotate(90deg);}
+.rv-inner{opacity:0 !important;animation:rvFadeIn 0.22s ease 0.44s forwards;}
+@keyframes rvDrawRing{to{stroke-dashoffset:0;}}
+@keyframes rvFadeIn{to{opacity:1 !important;}}
+/* Recorder ring wrapper */
+.rr-outer{position:relative;display:inline-flex;}
+.rr-ring{position:absolute;top:-6px;left:-6px;width:calc(100% + 12px);height:calc(100% + 12px);pointer-events:none;z-index:6;overflow:visible;}
+.rr-ring circle{stroke-dasharray:817;stroke-dashoffset:817;animation:rvDrawRing 0.52s cubic-bezier(0.33,0,0.18,1) forwards;transform-origin:50% 50%;transform:rotate(90deg);}
+.rr-preview-fade{opacity:0;animation:rvFadeIn 0.24s ease 0.48s forwards;}
+</style>
   <link rel="icon" href="icon-192.png" sizes="192x192">
   <link rel="icon" href="favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" href="icon-180.png">
@@ -1094,7 +1107,7 @@ button:focus,input:focus,textarea:focus,[onclick]:focus{outline:none;}
 <!-- LIGHTBOX FOR PHOTOS/VIDEOS -->
 <!-- ROUND VIDEO RECORDER -->
 <div class="round-rec-overlay" id="roundRecOverlay">
-  <div class="round-rec-circle" id="roundRecCircle"><video id="roundRecPreview" autoplay playsinline muted></video></div>
+  <div class="rr-outer" id="rrOuter"><div class="round-rec-circle" id="roundRecCircle"><video id="roundRecPreview" autoplay playsinline muted></video></div></div>
   <button onclick="flipRoundCamera()" style="position:absolute;top:50%;right:20px;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,0.7);border:2px solid rgba(255,255,255,0.35);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">🔄</button>
   <div id="roundRecStatus" style="color:rgba(255,255,255,0.6);font-size:13px;">Нажми ⏺ чтобы начать запись (до 60 сек)</div>
   <div style="display:flex;gap:20px;align-items:center;">
@@ -1790,11 +1803,7 @@ function bubbleHtmlFor(msgId,m){
     return `<div class="missed-call-bubble">${isVideo?'🎥':'📵'} Пропущенный ${isVideo?'видеозвонок':'аудиозвонок'}<span class="mc-callback" onclick="startCall('${m.callType||'audio'}')">↩️</span></div>`;
   } else if(m.roundVideo){
     chatMediaCache[msgId]={kind:'roundvideo',data:m.roundVideo};
-    return `<div class="round-video-wrap" id="rv_${msgId}" onclick="playRoundVideo('${msgId}')">
-      <video src="${m.roundVideo}" playsinline></video>
-      <div class="round-video-play">▶</div>
-      <div class="round-video-dur">${fmtDur(m.duration)}</div>
-    </div>`;
+    return `<div class="rv-outer" onclick="playRoundVideo('${msgId}')"><svg class="rv-ring" viewBox="0 0 170 170" fill="none"><defs><linearGradient id="rvG${msgId}" x1="0.5" y1="1" x2="0.5" y2="0" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#ff0055"/><stop offset="100%" stop-color="#d87bff"/></linearGradient><filter id="rvF${msgId}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><circle cx="85" cy="85" r="80" stroke="url(#rvG${msgId})" stroke-width="3.5" stroke-linecap="round" filter="url(#rvF${msgId})"/></svg><div class="round-video-wrap rv-inner" id="rv_${msgId}"><video src="${m.roundVideo}" playsinline></video><div class="round-video-play">▶</div><div class="round-video-dur">${fmtDur(m.duration)}</div></div></div>`;
   } else if(m.voice){
     chatVoiceCache[msgId]=m.voice;
     return `<div class="bubble voice-bubble">
@@ -2104,6 +2113,30 @@ window.openRoundRecorder=async function(target,channelId,postId){
   if(target==='channel'&&!curChannelId)return;
   if(target==='comment'&&(!channelId||!postId))return;
   document.getElementById('roundRecOverlay').classList.add('open');
+  // SVG ring appear animation on recorder circle
+  (function(){
+    var outer=document.getElementById('rrOuter');
+    var old=outer.querySelector('.rr-ring');if(old)old.remove();
+    var preview=document.getElementById('roundRecPreview');
+    preview.classList.remove('rr-preview-fade');
+    void preview.offsetWidth; // reflow
+    var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('class','rr-ring');
+    svg.setAttribute('viewBox','0 0 272 272');
+    svg.setAttribute('fill','none');
+    svg.innerHTML='<defs>'
+      +'<linearGradient id="rrGrd" x1="0.5" y1="1" x2="0.5" y2="0" gradientUnits="objectBoundingBox">'
+      +'<stop offset="0%" stop-color="#ff0055"/><stop offset="100%" stop-color="#d87bff"/>'
+      +'</linearGradient>'
+      +'<filter id="rrGlw" x="-30%" y="-30%" width="160%" height="160%">'
+      +'<feGaussianBlur stdDeviation="4" result="b"/>'
+      +'<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>'
+      +'</filter>'
+      +'</defs>'
+      +'<circle cx="136" cy="136" r="130" stroke="url(#rrGrd)" stroke-width="4" stroke-linecap="round" filter="url(#rrGlw)"/>';
+    outer.appendChild(svg);
+    preview.classList.add('rr-preview-fade');
+  })();
   document.getElementById('roundRecSendBtn').style.display='none';
   document.getElementById('roundRecToggleBtn').style.display='flex';
   document.getElementById('roundRecStatus').textContent='Нажми ⏺ чтобы начать запись (до 60 сек)';
