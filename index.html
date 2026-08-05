@@ -1218,7 +1218,7 @@ let roundRecStream=null,roundRecMediaRecorder=null,roundRecChunks=[],roundRecTar
 let pendingChannelAttach=null;
 let pendingCommentAttach={};
 let commentVoiceRecorder=null,commentVoiceChunks=[],commentVoiceStart=0,commentVoiceRecordingPid=null,commentVoiceTimerInt=null;
-const MAX_ROUND_SECONDS=60;
+const MAX_ROUND_SECONDS=20;
 const ROLE_DEFS={
   admin:{icon:'🔑',label:'Администратор',cls:'role-admin'},
   founder:{icon:'👑',label:'Основатель',cls:'role-founder'},
@@ -1807,7 +1807,8 @@ function bubbleHtmlFor(msgId,m){
     return `<div class="missed-call-bubble">${isVideo?'🎥':'📵'} Пропущенный ${isVideo?'видеозвонок':'аудиозвонок'}<span class="mc-callback" onclick="startCall('${m.callType||'audio'}')">↩️</span></div>`;
   } else if(m.roundVideo){
     chatMediaCache[msgId]={kind:'roundvideo',data:m.roundVideo};
-    return `<div class="rv-outer" onclick="playRoundVideo('${msgId}')"><svg class="rv-ring" viewBox="0 0 170 170" fill="none"><defs><linearGradient id="rvG${msgId}" x1="0.5" y1="1" x2="0.5" y2="0" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#ff0055"/><stop offset="100%" stop-color="#d87bff"/></linearGradient><filter id="rvF${msgId}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><circle cx="85" cy="85" r="80" stroke="url(#rvG${msgId})" stroke-width="3.5" stroke-linecap="round" filter="url(#rvF${msgId})"/></svg><div class="round-video-wrap rv-inner" id="rv_${msgId}"><video src="${m.roundVideo}" playsinline></video><div class="round-video-play">▶</div><div class="round-video-dur">${fmtDur(m.duration)}</div></div></div>`;
+    if(!m.roundVideo){return `<div class="rv-outer"><div class="round-video-wrap" style="display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;font-size:11px;color:rgba(255,255,255,0.5);">⚠️ Видео не загрузилось</div></div>`;}
+    return `<div class="rv-outer" onclick="playRoundVideo('${msgId}')"><svg class="rv-ring" viewBox="0 0 170 170" fill="none"><defs><linearGradient id="rvG${msgId}" x1="0.5" y1="1" x2="0.5" y2="0" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#ff0055"/><stop offset="100%" stop-color="#d87bff"/></linearGradient><filter id="rvF${msgId}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><circle cx="85" cy="85" r="80" stroke="url(#rvG${msgId})" stroke-width="3.5" stroke-linecap="round" filter="url(#rvF${msgId})"/></svg><div class="round-video-wrap rv-inner" id="rv_${msgId}"><video src="${m.roundVideo}" playsinline preload="auto"></video><div class="round-video-play">▶</div><div class="round-video-dur">${fmtDur(m.duration)}</div></div></div>`;
   } else if(m.voice){
     chatVoiceCache[msgId]=m.voice;
     return `<div class="bubble voice-bubble">
@@ -2200,13 +2201,14 @@ window.toggleRoundRecording=function(){
 }
 window.sendRoundVideo=function(){
   if(!pendingRoundVideo)return;
+  const onErr=(e)=>{console.error('[roundVideo] send failed:',e);alert('⚠️ Не удалось отправить видео-кружок. Возможно, слишком большой файл — попробуй запись покороче.');};
   if(roundRecTarget==='comment'&&roundRecChannelId&&roundRecPostId){
-    db.ref('channels/'+roundRecChannelId+'/posts/'+roundRecPostId+'/comments').push({nick:myNick,roundVideo:pendingRoundVideo.data,duration:pendingRoundVideo.duration,ts:Date.now()});
+    db.ref('channels/'+roundRecChannelId+'/posts/'+roundRecPostId+'/comments').push({nick:myNick,roundVideo:pendingRoundVideo.data,duration:pendingRoundVideo.duration,ts:Date.now()}).catch(onErr);
   } else if(roundRecTarget==='channel'&&curChannelId){
-    db.ref('channels/'+curChannelId+'/posts').push({nick:myNick,roundVideo:pendingRoundVideo.data,duration:pendingRoundVideo.duration,ts:Date.now()});
+    db.ref('channels/'+curChannelId+'/posts').push({nick:myNick,roundVideo:pendingRoundVideo.data,duration:pendingRoundVideo.duration,ts:Date.now()}).catch(onErr);
   } else if(curChat){
     const path=curType==='group'?'groups/'+curChat+'/messages':'dms/'+curChat+'/messages';
-    db.ref(path).push({nick:myNick,roundVideo:pendingRoundVideo.data,duration:pendingRoundVideo.duration,ts:Date.now()});
+    db.ref(path).push({nick:myNick,roundVideo:pendingRoundVideo.data,duration:pendingRoundVideo.duration,ts:Date.now()}).catch(onErr);
     db.ref(curType==='group'?'groups/'+curChat:'dms/'+curChat).update({lastMsg:'⦿ Видео-кружок',lastTs:Date.now(),lastNick:myNick});
     if(curType==='dm'){const other=curChat.split('_').find(p=>p!==myNick);if(other)db.ref('dms/'+curChat+'/unread/'+other).set(true);}
   }
