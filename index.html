@@ -1451,9 +1451,16 @@ function finishRegistration(){
   }).catch(e=>{err.style.color='#f87171';err.textContent='Ошибка: '+e.message;});
 }
 
-function loginAsNick(nick,phoneKey){
+function loginAsNick(nick,phoneKey,isAutoLogin){
   const err=document.getElementById('loginErr')||document.getElementById('codeErr');
-  const t=setTimeout(()=>{if(err){err.style.color='#f87171';err.textContent='Нет ответа. Проверь интернет.';}},10000);
+  const t=setTimeout(()=>{
+    if(isAutoLogin){
+      // Возвращающийся пользователь и Firebase не отвечает — открываем приложение локально, не блокируем ошибкой
+      loginOffline(nick,phoneKey);
+      return;
+    }
+    if(err){err.style.color='#f87171';err.textContent='Нет ответа. Проверь интернет.';}
+  },10000);
   db.ref('users/'+nick).once('value').then(snap=>{
     clearTimeout(t);
     const u=snap.val()||{};
@@ -1462,6 +1469,8 @@ function loginAsNick(nick,phoneKey){
     localStorage.setItem('fn',nick);localStorage.setItem('fphone',phoneKey);
     const stars=u.stars||0;myStars=stars;
     window._myPremium=!!(u.premium&&u.premium>Date.now());
+    // Кэшируем базовый профиль локально — пригодится для входа без интернета в будущем
+    try{localStorage.setItem('fcProfile',JSON.stringify({bio:myBio,color:u.color||gc(nick),stars,premium:u.premium||null,avatar:u.avatar||null,roleBadge:u.roleBadge||null}));}catch(e){}
     db.ref('users/'+nick).set({nick,bio:u.bio!=null?u.bio:myBio,color:u.color||gc(nick),online:true,lastSeen:Date.now(),rating:u.rating!=null?u.rating:50,stars,joinDate:u.joinDate||Date.now(),claimedAchs:u.claimedAchs||{},title:u.title||'',premium:u.premium||null,status:u.status||'',avatar:u.avatar||null,roleBadge:u.roleBadge||null,avatarFrame:u.avatarFrame||null,blocked:u.blocked||null,gifts:u.gifts||null,claimedMilestones:u.claimedMilestones||null,gamblingStats:u.gamblingStats||null,phone:fmtPhone(phoneKey)});
     if(u.riskWarning) setTimeout(()=>alert('⚠️ Твой рейтинг ниже 25%! Риск бана от администратора.'),1500);
     setInterval(()=>db.ref('users/'+nick+'/lastSeen').set(Date.now()),30000);
@@ -1471,17 +1480,70 @@ function loginAsNick(nick,phoneKey){
     db.ref('users/'+nick+'/lastSeen').onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
     db.ref('users/'+nick+'/online').set(true);
     const th=localStorage.getItem('fct')||'default';applyTheme(th);
+    hideOfflineBanner();
     ss('chatsScreen');
     loadChats();loadPosts();renderProfile();startListeners();loadBlocked();
     requestNotifPermission();
-  }).catch(e=>{clearTimeout(t);if(err){err.style.color='#f87171';err.textContent='Ошибка: '+e.message;}});
+  }).catch(e=>{
+    clearTimeout(t);
+    if(isAutoLogin){loginOffline(nick,phoneKey);return;}
+    if(err){err.style.color='#f87171';err.textContent='Ошибка: '+e.message;}
+  });
+}
+
+// ===== ОФЛАЙН-ВХОД (для пользователей, которые уже входили на этом устройстве) =====
+let __offlineMode=false;
+function loginOffline(nick,phoneKey){
+  __offlineMode=true;
+  myNick=nick;myPhoneKey=phoneKey;
+  let cached={};
+  try{cached=JSON.parse(localStorage.getItem('fcProfile')||'{}');}catch(e){}
+  myBio=myBio||cached.bio||'';
+  myStars=cached.stars||0;
+  window._myPremium=!!(cached.premium&&cached.premium>Date.now());
+  const th=localStorage.getItem('fct')||'default';applyTheme(th);
+  ss('chatsScreen');
+  showOfflineBanner();
+  // Слушатели Firebase сами подключатся и досинхронизируются, как только появится сеть
+  loadChats();loadPosts();renderProfile();startListeners();loadBlocked();
+  // Как только связь восстановится — полноценно логинимся заново (обновит presence и профиль)
+  window.addEventListener('online',function _fcReconnect(){
+    window.removeEventListener('online',_fcReconnect);
+    loginAsNick(nick,phoneKey,true);
+  });
+}
+function showOfflineBanner(){
+  let b=document.getElementById('fcOfflineBanner');
+  if(!b){
+    b=document.createElement('div');
+    b.id='fcOfflineBanner';
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2000;background:rgba(120,80,0,0.92);backdrop-filter:blur(8px);color:#ffe9b3;font-size:12.5px;text-align:center;padding:7px 12px;padding-top:calc(7px + env(safe-area-inset-top,0));';
+    b.textContent='📴 Нет соединения — показаны локальные данные. Новые сообщения появятся при подключении к интернету.';
+    document.body.appendChild(b);
+  }
+  b.style.display='block';
+}
+function hideOfflineBanner(){
+  __offlineMode=false;
+  const b=document.getElementById('fcOfflineBanner');
+  if(b)b.style.display='none';
 }
 
 
 // AUTO LOGIN (если телефон уже подтверждался на этом устройстве)
 (()=>{
   const savedPhone=localStorage.getItem('fphone'),savedNick=localStorage.getItem('fn');
-  if(savedPhone&&savedNick){loginAsNick(savedNick,savedPhone);}
+  if(!savedPhone||!savedNick){
+    // Ранее не входили на этом устройстве — для первого входа интернет обязателен,
+    // ничего не делаем, покажется обычный экран входа по номеру телефона.
+    return;
+  }
+  if(navigator.onLine===false){
+    // Известно, что сети нет — не ждём Firebase, сразу открываем локально
+    loginOffline(savedNick,savedPhone);
+  } else {
+    loginAsNick(savedNick,savedPhone,true);
+  }
 })();
 
 function logout(){
